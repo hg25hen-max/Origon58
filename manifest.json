@@ -1,0 +1,11 @@
+{
+  "name": "Origon58",
+  "short_name": "Origon58",
+  "description": "Origon58 — cofre pessoal criptografado",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#080808",
+  "theme_color": "#080808",
+  "lang": "pt-BR"
+}
