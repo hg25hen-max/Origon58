@@ -176,7 +176,7 @@ textarea:focus {
 
 
 /* ==================================================
-   BOTÕES
+   BOTÕES — PADRÃO GERAL
 ================================================== */
 
 .primary-button,
@@ -184,9 +184,12 @@ textarea:focus {
 .danger-button {
   width: 100%;
   min-height: 47px;
+  height: 47px;
   margin-top: 10px;
+  padding: 0 14px;
   border-radius: 10px;
   font-weight: 800;
+  line-height: 1;
 }
 
 .primary-button {
@@ -348,51 +351,59 @@ textarea:focus {
   border: 1px solid #2b2b2b;
 }
 
-.data-card-title {
+.data-card h3 {
   margin-bottom: 9px;
   font-size: 15px;
   font-weight: 800;
 }
 
-.data-card-text {
+.ciphertext {
   width: 100%;
-  min-height: 130px;
+  min-height: 55px;
+  max-height: 130px;
   margin-bottom: 10px;
-  padding: 12px;
+  padding: 10px;
+  overflow: auto;
   border: 1px solid #292929;
   border-radius: 9px;
   background: #090909;
   color: #bbbbbb;
-  resize: vertical;
-  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-family:
+    Consolas,
+    "Courier New",
+    monospace;
+  font-size: 11px;
+  line-height: 1.4;
 }
 
-.data-card-actions {
+
+/* ==================================================
+   AÇÕES DOS DADOS
+================================================== */
+
+.data-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns:
+    1fr
+    1fr
+    1fr;
   gap: 8px;
+  width: 100%;
 }
 
-.small-button {
-  min-height: 40px;
-  padding: 8px;
-  border-radius: 8px;
-  background: var(--surface-3);
-  color: #ffffff;
-  border: 1px solid #333333;
+.data-actions .primary-button,
+.data-actions .secondary-button,
+.data-actions .danger-button {
+  width: 100%;
+  min-height: 47px;
+  height: 47px;
+  margin-top: 0;
+  padding: 0 8px;
+  border-radius: 9px;
   font-size: 12px;
-  font-weight: 800;
-}
-
-.small-danger-button {
-  min-height: 40px;
-  padding: 8px;
-  border-radius: 8px;
-  background: var(--danger-dark);
-  color: #ff9999;
-  border: 1px solid #612828;
-  font-size: 12px;
-  font-weight: 800;
+  white-space: nowrap;
 }
 
 
@@ -441,6 +452,26 @@ textarea:focus {
   grid-template-columns: 1fr 1fr;
   gap: 10px;
   margin-top: 18px;
+}
+
+.modal-actions .primary-button,
+.modal-actions .secondary-button,
+.modal-actions .danger-button {
+  margin-top: 0;
+}
+
+
+/* ==================================================
+   CONTROLES DO COFRE
+================================================== */
+
+#clearVaultButton,
+#clearTemporaryButton,
+#logoutButton {
+  width: 100%;
+  min-height: 47px;
+  height: 47px;
+  margin-top: 10px;
 }
 
 
@@ -514,8 +545,9 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 
-  .data-card-actions {
+  .data-actions {
     grid-template-columns: 1fr;
+    gap: 8px;
   }
 
 }
@@ -543,4 +575,4 @@ textarea:focus {
     padding: 13px;
   }
 
-  }
+}
