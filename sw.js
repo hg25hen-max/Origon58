@@ -2,36 +2,24 @@
 
 
 const CACHE_NAME =
-  "origon58-cache-v4";
+  "origon58-cache-v5";
 
 
 const APP_SHELL = [
-
   "./",
-
   "./index.html",
-
   "./style.css",
-
   "./script.js",
-
   "./manifest.json",
-
   "./sw.js"
-
 ];
 
-
-/* ==================================================
-   INSTALAÇÃO
-================================================== */
 
 self.addEventListener(
   "install",
   (event) => {
 
     event.waitUntil(
-
       caches
         .open(
           CACHE_NAME
@@ -46,30 +34,23 @@ self.addEventListener(
           () =>
             self.skipWaiting()
         )
-
     );
 
   }
 );
 
 
-/* ==================================================
-   ATIVAÇÃO
-================================================== */
-
 self.addEventListener(
   "activate",
   (event) => {
 
     event.waitUntil(
-
       caches
         .keys()
         .then(
           (cacheNames) => {
 
             return Promise.all(
-
               cacheNames
                 .filter(
                   (name) =>
@@ -82,7 +63,6 @@ self.addEventListener(
                       name
                     )
                 )
-
             );
 
           }
@@ -116,16 +96,11 @@ self.addEventListener(
 
           }
         )
-
     );
 
   }
 );
 
-
-/* ==================================================
-   BUSCAR ARQUIVOS
-================================================== */
 
 self.addEventListener(
   "fetch",
@@ -142,11 +117,9 @@ self.addEventListener(
 
 
     event.respondWith(
-
       fetch(
         event.request
       )
-
         .then(
           (response) => {
 
@@ -158,7 +131,6 @@ self.addEventListener(
 
               const copy =
                 response.clone();
-
 
               caches
                 .open(
@@ -177,12 +149,10 @@ self.addEventListener(
 
             }
 
-
             return response;
 
           }
         )
-
         .catch(
           async () => {
 
@@ -191,7 +161,6 @@ self.addEventListener(
                 event.request
               );
 
-
             if (
               cached
             ) {
@@ -199,7 +168,6 @@ self.addEventListener(
               return cached;
 
             }
-
 
             if (
               event.request.mode ===
@@ -211,7 +179,6 @@ self.addEventListener(
                   "./index.html"
                 );
 
-
               if (
                 fallback
               ) {
@@ -221,7 +188,6 @@ self.addEventListener(
               }
 
             }
-
 
             return new Response(
               "Origon58 offline.",
@@ -241,16 +207,11 @@ self.addEventListener(
 
           }
         )
-
     );
 
   }
 );
 
-
-/* ==================================================
-   ATUALIZAÇÃO MANUAL
-================================================== */
 
 self.addEventListener(
   "message",
