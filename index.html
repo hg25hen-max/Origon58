@@ -70,7 +70,6 @@
 
         <form id="setupForm">
 
-
           <div class="field">
 
             <label for="setupPassword1">
@@ -218,7 +217,6 @@
 
         <form id="loginForm">
 
-
           <div class="field">
 
             <label for="loginPassword1">
@@ -297,7 +295,6 @@
       class="screen hidden"
     >
 
-
       <header class="topbar">
 
         <div>
@@ -347,7 +344,7 @@
             </strong>
 
             <p>
-              As informações permanecem protegidas no armazenamento local.
+              Cada informação é protegida individualmente.
             </p>
 
           </div>
@@ -387,7 +384,7 @@
 
 
           <p class="panel-description">
-            Adicione informações e proteja cada uma delas com uma senha própria.
+            Cada dado possui sua própria criptografia e pode ser salvo separadamente.
           </p>
 
 
@@ -451,60 +448,20 @@
 
 
           <button
+            id="decryptSavedButton"
+            class="secondary-button"
+            type="button"
+          >
+            🔓 DESCRIPTOGRAFAR DADO SALVO
+          </button>
+
+
+          <button
             id="logoutButton"
             class="secondary-button"
             type="button"
           >
             🔒 VOLTAR PARA A SENHA
-          </button>
-
-        </section>
-
-
-
-        <!-- ==================================================
-             BACKUP GERAL
-        ================================================== -->
-
-        <section class="panel">
-
-          <div class="panel-header">
-
-            <div>
-
-              <span class="eyebrow">
-                SEGURANÇA
-              </span>
-
-              <h2>
-                Backup geral
-              </h2>
-
-            </div>
-
-          </div>
-
-
-          <p class="panel-description">
-            Crie um arquivo criptografado contendo os dados atuais do cofre.
-          </p>
-
-
-          <button
-            id="backupButton"
-            class="primary-button"
-            type="button"
-          >
-            💾 FAZER BACKUP
-          </button>
-
-
-          <button
-            id="decryptButton"
-            class="secondary-button"
-            type="button"
-          >
-            🔓 RESTAURAR BACKUP
           </button>
 
         </section>
@@ -707,134 +664,38 @@
 
 
     <!-- ==================================================
-         MODAL — BACKUP
+         MODAL — DESCRIPTOGRAFAR DADO SALVO
     ================================================== -->
 
     <div
-      id="backupModal"
+      id="decryptSavedModal"
       class="modal hidden"
     >
 
       <div class="modal-box">
 
         <span class="eyebrow">
-          BACKUP
+          DADO SALVO
         </span>
 
         <h2>
-          Criar backup
+          Descriptografar dado salvo
         </h2>
 
         <p class="modal-description">
-          Crie uma senha exclusiva para proteger este backup.
+          Escolha um arquivo .enc salvo anteriormente e informe a senha daquele dado.
         </p>
 
 
         <div class="field">
 
-          <label for="backupPassword">
-            Senha do backup
-          </label>
-
-          <input
-            type="password"
-            id="backupPassword"
-            autocomplete="new-password"
-          >
-
-        </div>
-
-
-        <div class="field">
-
-          <label for="backupPasswordConfirm">
-            Confirme a senha
-          </label>
-
-          <input
-            type="password"
-            id="backupPasswordConfirm"
-            autocomplete="new-password"
-          >
-
-        </div>
-
-
-        <div class="modal-actions">
-
-          <button
-            id="cancelBackupButton"
-            class="secondary-button"
-            type="button"
-          >
-            CANCELAR
-          </button>
-
-
-          <button
-            id="confirmBackupButton"
-            class="primary-button"
-            type="button"
-          >
-            CRIAR BACKUP
-          </button>
-
-        </div>
-
-
-        <button
-          id="saveBackupButton"
-          class="primary-button hidden"
-          type="button"
-        >
-          💾 SALVAR BACKUP
-        </button>
-
-
-        <p
-          id="backupMessage"
-          class="message"
-        ></p>
-
-      </div>
-
-    </div>
-
-
-
-    <!-- ==================================================
-         MODAL — RESTAURAR BACKUP
-    ================================================== -->
-
-    <div
-      id="decryptModal"
-      class="modal hidden"
-    >
-
-      <div class="modal-box">
-
-        <span class="eyebrow">
-          RESTAURAÇÃO
-        </span>
-
-        <h2>
-          Restaurar backup
-        </h2>
-
-        <p class="modal-description">
-          Selecione um arquivo .enc e informe a senha correspondente.
-        </p>
-
-
-        <div class="field">
-
-          <label for="backupFile">
-            Arquivo
+          <label for="savedDataFile">
+            Arquivo .ENC
           </label>
 
           <input
             type="file"
-            id="backupFile"
+            id="savedDataFile"
             accept=".enc,application/octet-stream"
           >
 
@@ -843,13 +704,13 @@
 
         <div class="field">
 
-          <label for="decryptPassword">
-            Senha do backup
+          <label for="savedDataPassword">
+            Senha do dado
           </label>
 
           <input
             type="password"
-            id="decryptPassword"
+            id="savedDataPassword"
             autocomplete="off"
           >
 
@@ -859,7 +720,7 @@
         <div class="modal-actions">
 
           <button
-            id="cancelDecryptButton"
+            id="cancelDecryptSavedButton"
             class="secondary-button"
             type="button"
           >
@@ -868,7 +729,7 @@
 
 
           <button
-            id="confirmDecryptButton"
+            id="confirmDecryptSavedButton"
             class="primary-button"
             type="button"
           >
@@ -879,9 +740,26 @@
 
 
         <p
-          id="decryptMessage"
+          id="decryptSavedMessage"
           class="message"
         ></p>
+
+
+        <div
+          id="savedDataResult"
+          class="saved-data-result hidden"
+        >
+
+          <span class="eyebrow">
+            CONTEÚDO DESCRIPTOGRAFADO
+          </span>
+
+          <div
+            id="savedDataResultText"
+            class="result-text"
+          ></div>
+
+        </div>
 
       </div>
 
@@ -895,4 +773,4 @@
 
 </body>
 
-              </html>
+      </html>
