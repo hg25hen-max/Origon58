@@ -1,326 +1,109 @@
 "use strict";
 
+/*
+  ORIGON58
+  Cofre local com:
+  - 3 senhas de acesso
+  - PBKDF2 + SHA-256
+  - AES-GCM
+  - cofre criptografado no localStorage
+  - dados individuais criptografados
+  - arquivos .enc individuais
+  - descriptografia de .enc externo
+  - funcionamento offline
+*/
 
-/* ==================================================
+
+/* =========================================================
    CONFIGURAÇÕES
-================================================== */
+========================================================= */
 
-const CONFIG_KEY =
-  "origon58_config_v4";
+const CONFIG_KEY = "origon58_config_v5";
+const VAULT_KEY = "origon58_vault_v5";
 
-const VAULT_KEY =
-  "origon58_vault_v4";
+const CONFIG_VERSION = 5;
+const VAULT_VERSION = 5;
+const ITEM_VERSION = 4;
 
-const CONFIG_VERSION =
-  4;
-
-const VAULT_VERSION =
-  4;
-
-const ITEM_VERSION =
-  4;
-
-const PBKDF2_ITERATIONS =
-  250000;
+const PBKDF2_ITERATIONS = 250000;
 
 
-/* ==================================================
+/* =========================================================
    ESTADO TEMPORÁRIO
-================================================== */
+========================================================= */
 
 let currentVaultKey = null;
 
-let temporarySavedData = null;
+let temporarySavedData = "";
 
+let temporarySavedFile = null;
 
-/* ==================================================
-   ELEMENTOS
-================================================== */
 
-const setupScreen =
-  document.getElementById(
-    "setupScreen"
-  );
+/* =========================================================
+   ELEMENTOS AUXILIARES
+========================================================= */
 
-const loginScreen =
-  document.getElementById(
-    "loginScreen"
-  );
+function firstElement(ids) {
 
-const vaultScreen =
-  document.getElementById(
-    "vaultScreen"
-  );
+  for (const id of ids) {
 
+    const element = document.getElementById(id);
 
-const setupForm =
-  document.getElementById(
-    "setupForm"
-  );
-
-const loginForm =
-  document.getElementById(
-    "loginForm"
-  );
-
-
-const setupMessage =
-  document.getElementById(
-    "setupMessage"
-  );
-
-const loginMessage =
-  document.getElementById(
-    "loginMessage"
-  );
-
-
-const dataList =
-  document.getElementById(
-    "dataList"
-  );
-
-const dataCount =
-  document.getElementById(
-    "dataCount"
-  );
-
-
-const addDataButton =
-  document.getElementById(
-    "addDataButton"
-  );
-
-const clearVaultButton =
-  document.getElementById(
-    "clearVaultButton"
-  );
-
-const clearTemporaryButton =
-  document.getElementById(
-    "clearTemporaryButton"
-  );
-
-const decryptSavedButton =
-  document.getElementById(
-    "decryptSavedButton"
-  );
-
-const logoutButton =
-  document.getElementById(
-    "logoutButton"
-  );
-
-const lockButton =
-  document.getElementById(
-    "lockButton"
-  );
-
-
-/* ==================================================
-   MODAL — ADICIONAR DADO
-================================================== */
-
-const addDataModal =
-  document.getElementById(
-    "addDataModal"
-  );
-
-const cancelAddDataButton =
-  document.getElementById(
-    "cancelAddDataButton"
-  );
-
-const encryptDataButton =
-  document.getElementById(
-    "encryptDataButton"
-  );
-
-const newDataText =
-  document.getElementById(
-    "newDataText"
-  );
-
-const newDataPassword =
-  document.getElementById(
-    "newDataPassword"
-  );
-
-const newDataPasswordConfirm =
-  document.getElementById(
-    "newDataPasswordConfirm"
-  );
-
-const addDataMessage =
-  document.getElementById(
-    "addDataMessage"
-  );
-
-
-/* ==================================================
-   MODAL — LIMPAR COFRE
-================================================== */
-
-const clearVaultModal =
-  document.getElementById(
-    "clearVaultModal"
-  );
-
-const cancelClearVaultButton =
-  document.getElementById(
-    "cancelClearVaultButton"
-  );
-
-const confirmClearVaultButton =
-  document.getElementById(
-    "confirmClearVaultButton"
-  );
-
-const clearVaultPassword =
-  document.getElementById(
-    "clearVaultPassword"
-  );
-
-const clearVaultPasswordConfirm =
-  document.getElementById(
-    "clearVaultPasswordConfirm"
-  );
-
-const clearVaultMessage =
-  document.getElementById(
-    "clearVaultMessage"
-  );
-
-
-/* ==================================================
-   MODAL — DADO SALVO
-================================================== */
-
-const decryptSavedModal =
-  document.getElementById(
-    "decryptSavedModal"
-  );
-
-const cancelDecryptSavedButton =
-  document.getElementById(
-    "cancelDecryptSavedButton"
-  );
-
-const confirmDecryptSavedButton =
-  document.getElementById(
-    "confirmDecryptSavedButton"
-  );
-
-const savedDataFile =
-  document.getElementById(
-    "savedDataFile"
-  );
-
-const savedDataPassword =
-  document.getElementById(
-    "savedDataPassword"
-  );
-
-const decryptSavedMessage =
-  document.getElementById(
-    "decryptSavedMessage"
-  );
-
-const savedDataResult =
-  document.getElementById(
-    "savedDataResult"
-  );
-
-const savedDataResultText =
-  document.getElementById(
-    "savedDataResultText"
-  );
-
-
-/* ==================================================
-   UTILITÁRIOS
-================================================== */
-
-function showScreen(
-  screen
-) {
-
-  setupScreen.classList.add(
-    "hidden"
-  );
-
-  loginScreen.classList.add(
-    "hidden"
-  );
-
-  vaultScreen.classList.add(
-    "hidden"
-  );
-
-  screen.classList.remove(
-    "hidden"
-  );
-
-}
-
-
-function randomBytes(
-  length
-) {
-
-  const bytes =
-    new Uint8Array(
-      length
-    );
-
-  crypto.getRandomValues(
-    bytes
-  );
-
-  return bytes;
-
-}
-
-
-function bytesToBase64(
-  bytes
-) {
-
-  let binary = "";
-
-  const chunkSize =
-    0x8000;
-
-  for (
-    let i = 0;
-    i < bytes.length;
-    i += chunkSize
-  ) {
-
-    binary += String.fromCharCode(
-      ...bytes.subarray(
-        i,
-        i + chunkSize
-      )
-    );
+    if (element) {
+      return element;
+    }
 
   }
 
-  return btoa(
-    binary
-  );
-
+  return null;
 }
 
 
-function base64ToBytes(
-  base64
-) {
+function byId(id) {
+  return document.getElementById(id);
+}
+
+
+/* =========================================================
+   ELEMENTOS PRINCIPAIS
+========================================================= */
+
+const loginScreen =
+  firstElement([
+    "loginScreen"
+  ]);
+
+const setupScreen =
+  firstElement([
+    "setupScreen"
+  ]);
+
+const vaultScreen =
+  firstElement([
+    "vaultScreen"
+  ]);
+
+
+/* =========================================================
+   FUNÇÕES CRIPTOGRÁFICAS
+========================================================= */
+
+function bytesToBase64(bytes) {
+
+  let binary = "";
+
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+
+  return btoa(binary);
+}
+
+
+function base64ToBytes(base64) {
 
   const binary =
-    atob(
-      base64
-    );
+    atob(base64);
 
   const bytes =
     new Uint8Array(
@@ -334,67 +117,37 @@ function base64ToBytes(
   ) {
 
     bytes[i] =
-      binary.charCodeAt(
-        i
-      );
+      binary.charCodeAt(i);
 
   }
 
   return bytes;
-
 }
 
 
-function textToBytes(
-  text
-) {
+function randomBytes(length) {
 
-  return new TextEncoder().encode(
-    text
-  );
+  const bytes =
+    new Uint8Array(length);
 
+  crypto.getRandomValues(bytes);
+
+  return bytes;
 }
 
-
-function bytesToText(
-  bytes
-) {
-
-  return new TextDecoder().decode(
-    bytes
-  );
-
-}
-
-
-function createId() {
-
-  return (
-    Date.now().toString(
-      36
-    ) +
-    "-" +
-    crypto.randomUUID()
-  );
-
-}
-
-
-/* ==================================================
-   CRIPTOGRAFIA
-================================================== */
 
 async function deriveKey(
   password,
   salt
 ) {
 
-  const passwordBytes =
-    textToBytes(
-      password
-    );
+  const encoder =
+    new TextEncoder();
 
-  const material =
+  const passwordBytes =
+    encoder.encode(password);
+
+  const baseKey =
     await crypto.subtle.importKey(
       "raw",
       passwordBytes,
@@ -407,24 +160,16 @@ async function deriveKey(
 
   return crypto.subtle.deriveKey(
     {
-      name:
-        "PBKDF2",
-
+      name: "PBKDF2",
       salt,
-
       iterations:
         PBKDF2_ITERATIONS,
-
-      hash:
-        "SHA-256"
+      hash: "SHA-256"
     },
-    material,
+    baseKey,
     {
-      name:
-        "AES-GCM",
-
-      length:
-        256
+      name: "AES-GCM",
+      length: 256
     },
     false,
     [
@@ -432,82 +177,96 @@ async function deriveKey(
       "decrypt"
     ]
   );
+}
 
+
+async function deriveVerifier(
+  password,
+  salt
+) {
+
+  const encoder =
+    new TextEncoder();
+
+  const passwordBytes =
+    encoder.encode(password);
+
+  const baseKey =
+    await crypto.subtle.importKey(
+      "raw",
+      passwordBytes,
+      "PBKDF2",
+      false,
+      [
+        "deriveBits"
+      ]
+    );
+
+  const bits =
+    await crypto.subtle.deriveBits(
+      {
+        name: "PBKDF2",
+        salt,
+        iterations:
+          PBKDF2_ITERATIONS,
+        hash: "SHA-256"
+      },
+      baseKey,
+      256
+    );
+
+  return bytesToBase64(
+    new Uint8Array(bits)
+  );
 }
 
 
 async function encryptText(
   text,
-  password
+  key
 ) {
 
-  const salt =
-    randomBytes(
-      16
-    );
+  const encoder =
+    new TextEncoder();
 
   const iv =
-    randomBytes(
-      12
-    );
+    randomBytes(12);
 
-  const key =
-    await deriveKey(
-      password,
-      salt
-    );
+  const plaintext =
+    encoder.encode(text);
 
-  const encrypted =
+  const ciphertext =
     await crypto.subtle.encrypt(
       {
-        name:
-          "AES-GCM",
-
+        name: "AES-GCM",
         iv
       },
       key,
-      textToBytes(
-        text
-      )
+      plaintext
     );
 
   return {
-
-    salt:
-      bytesToBase64(
-        salt
-      ),
-
     iv:
-      bytesToBase64(
-        iv
-      ),
+      bytesToBase64(iv),
 
     ciphertext:
       bytesToBase64(
         new Uint8Array(
-          encrypted
+          ciphertext
         )
       )
-
   };
-
 }
 
 
 async function decryptText(
   packageData,
-  password
+  key
 ) {
-
-  const salt =
-    base64ToBytes(
-      packageData.kdf.salt
-    );
 
   const iv =
     base64ToBytes(
-      packageData.cipher.iv
+      packageData.iv
     );
 
   const ciphertext =
@@ -515,197 +274,175 @@ async function decryptText(
       packageData.ciphertext
     );
 
-  const key =
-    await deriveKey(
-      password,
-      salt
-    );
-
-  const decrypted =
+  const plaintext =
     await crypto.subtle.decrypt(
       {
-        name:
-          "AES-GCM",
-
+        name: "AES-GCM",
         iv
       },
       key,
       ciphertext
     );
 
-  return bytesToText(
-    new Uint8Array(
-      decrypted
-    )
+  const decoder =
+    new TextDecoder();
+
+  return decoder.decode(
+    plaintext
   );
-
 }
 
 
-/* ==================================================
-   CONFIGURAÇÃO DAS 3 SENHAS
-================================================== */
-
-async function createVerifier(
-  password
-) {
-
-  const salt =
-    randomBytes(
-      16
-    );
-
-  const key =
-    await deriveKey(
-      password,
-      salt
-    );
-
-  const exported =
-    await crypto.subtle.exportKey(
-      "raw",
-      key
-    );
-
-  return {
-
-    salt:
-      bytesToBase64(
-        salt
-      ),
-
-    verifier:
-      bytesToBase64(
-        new Uint8Array(
-          exported
-        )
-      )
-
-  };
-
-}
-
-
-async function verifyPassword(
-  password,
-  stored
-) {
-
-  try {
-
-    const salt =
-      base64ToBytes(
-        stored.salt
-      );
-
-    const key =
-      await deriveKey(
-        password,
-        salt
-      );
-
-    const exported =
-      await crypto.subtle.exportKey(
-        "raw",
-        key
-      );
-
-    const actual =
-      new Uint8Array(
-        exported
-      );
-
-    const expected =
-      base64ToBytes(
-        stored.verifier
-      );
-
-    if (
-      actual.length !==
-      expected.length
-    ) {
-
-      return false;
-
-    }
-
-    let result = 0;
-
-    for (
-      let i = 0;
-      i < actual.length;
-      i++
-    ) {
-
-      result |=
-        actual[i] ^
-        expected[i];
-
-    }
-
-    return result === 0;
-
-  } catch (
-    error
-  ) {
-
-    return false;
-
-  }
-
-}
-
-
-/* ==================================================
+/* =========================================================
    COFRE
-================================================== */
+========================================================= */
 
-function getEmptyVault() {
+async function createVaultKey(
+  password1,
+  password2,
+  password3,
+  vaultSalt
+) {
+
+  const combined =
+    password1 +
+    "\u0000" +
+    password2 +
+    "\u0000" +
+    password3;
+
+  return deriveKey(
+    combined,
+    vaultSalt
+  );
+}
+
+
+async function encryptVault(
+  vault,
+  vaultKey
+) {
+
+  const json =
+    JSON.stringify(vault);
+
+  const encrypted =
+    await encryptText(
+      json,
+      vaultKey
+    );
 
   return {
+    format:
+      "Origon58 Encrypted Vault",
 
     version:
       VAULT_VERSION,
 
-    items:
-      []
+    cipher: {
+      name:
+        "AES-GCM"
+    },
 
+    iv:
+      encrypted.iv,
+
+    ciphertext:
+      encrypted.ciphertext
   };
-
 }
 
 
-function loadConfig() {
+async function decryptVault(
+  encryptedVault,
+  vaultKey
+) {
 
-  const raw =
-    localStorage.getItem(
-      CONFIG_KEY
-    );
-
-  if (!raw) {
-
-    return null;
-
-  }
-
-  try {
-
-    return JSON.parse(
-      raw
-    );
-
-  } catch (
-    error
+  if (
+    !encryptedVault ||
+    encryptedVault.format !==
+      "Origon58 Encrypted Vault"
   ) {
 
-    return null;
+    throw new Error(
+      "Formato do cofre inválido."
+    );
 
   }
 
+  if (
+    encryptedVault.version !==
+    VAULT_VERSION
+  ) {
+
+    throw new Error(
+      "Versão do cofre inválida."
+    );
+
+  }
+
+  const json =
+    await decryptText(
+      encryptedVault,
+      vaultKey
+    );
+
+  const vault =
+    JSON.parse(json);
+
+  if (
+    !vault ||
+    !Array.isArray(
+      vault.items
+    )
+  ) {
+
+    throw new Error(
+      "Estrutura do cofre inválida."
+    );
+
+  }
+
+  return vault;
 }
 
 
-function loadVault() {
+async function saveVault(
+  vault
+) {
+
+  if (!currentVaultKey) {
+
+    throw new Error(
+      "Cofre bloqueado."
+    );
+
+  }
+
+  const encrypted =
+    await encryptVault(
+      vault,
+      currentVaultKey
+    );
+
+  localStorage.setItem(
+    VAULT_KEY,
+    JSON.stringify(
+      encrypted
+    )
+  );
+}
+
+
+async function loadVault() {
+
+  if (!currentVaultKey) {
+
+    throw new Error(
+      "Cofre bloqueado."
+    );
+
+  }
 
   const raw =
     localStorage.getItem(
@@ -714,197 +451,711 @@ function loadVault() {
 
   if (!raw) {
 
-    return getEmptyVault();
+    return {
+      items: []
+    };
 
   }
 
-  try {
+  const encrypted =
+    JSON.parse(raw);
 
-    return JSON.parse(
-      raw
-    );
-
-  } catch (
-    error
-  ) {
-
-    return getEmptyVault();
-
-  }
-
+  return decryptVault(
+    encrypted,
+    currentVaultKey
+  );
 }
 
 
-function saveVault(
-  vault
+/* =========================================================
+   CONFIGURAÇÃO DAS 3 SENHAS
+========================================================= */
+
+async function createAccess(
+  password1,
+  password2,
+  password3
 ) {
 
+  if (
+    !password1 ||
+    !password2 ||
+    !password3
+  ) {
+
+    throw new Error(
+      "As três senhas são obrigatórias."
+    );
+
+  }
+
+  const vaultSalt =
+    randomBytes(16);
+
+  const salt1 =
+    randomBytes(16);
+
+  const salt2 =
+    randomBytes(16);
+
+  const salt3 =
+    randomBytes(16);
+
+
+  const verifier1 =
+    await deriveVerifier(
+      password1,
+      salt1
+    );
+
+  const verifier2 =
+    await deriveVerifier(
+      password2,
+      salt2
+    );
+
+  const verifier3 =
+    await deriveVerifier(
+      password3,
+      salt3
+    );
+
+
+  const config = {
+
+    format:
+      "Origon58 Config",
+
+    version:
+      CONFIG_VERSION,
+
+    kdf: {
+      name:
+        "PBKDF2",
+
+      hash:
+        "SHA-256",
+
+      iterations:
+        PBKDF2_ITERATIONS
+    },
+
+    vaultSalt:
+      bytesToBase64(
+        vaultSalt
+      ),
+
+    passwords: [
+
+      {
+        salt:
+          bytesToBase64(
+            salt1
+          ),
+
+        verifier:
+          verifier1
+      },
+
+      {
+        salt:
+          bytesToBase64(
+            salt2
+          ),
+
+        verifier:
+          verifier2
+      },
+
+      {
+        salt:
+          bytesToBase64(
+            salt3
+          ),
+
+        verifier:
+          verifier3
+      }
+
+    ]
+
+  };
+
+
   localStorage.setItem(
-    VAULT_KEY,
+    CONFIG_KEY,
     JSON.stringify(
-      vault
+      config
     )
   );
 
-}
 
-
-/* ==================================================
-   CRIPTOGRAFIA DO COFRE
-================================================== */
-
-async function createVaultKey(
-  passwords
-) {
-
-  const combined =
-    passwords.join(
-      "\u0000"
+  const vaultKey =
+    await createVaultKey(
+      password1,
+      password2,
+      password3,
+      vaultSalt
     );
 
-  const salt =
-    randomBytes(
-      16
-    );
 
-  const material =
-    await crypto.subtle.importKey(
-      "raw",
-      textToBytes(
-        combined
-      ),
-      "PBKDF2",
-      false,
-      [
-        "deriveKey"
-      ]
-    );
+  currentVaultKey =
+    vaultKey;
 
-  const key =
-    await crypto.subtle.deriveKey(
-      {
-        name:
-          "PBKDF2",
 
-        salt,
-
-        iterations:
-          PBKDF2_ITERATIONS,
-
-        hash:
-          "SHA-256"
-      },
-      material,
-      {
-        name:
-          "AES-GCM",
-
-        length:
-          256
-      },
-      false,
-      [
-        "encrypt",
-        "decrypt"
-      ]
-    );
-
-  return {
-    key,
-    salt
-  };
+  await saveVault({
+    items: []
+  });
 
 }
 
 
-async function encryptVault(
-  vault,
-  passwords
+/* =========================================================
+   VERIFICAÇÃO DE ACESSO
+========================================================= */
+
+async function verifyPassword(
+  password,
+  passwordConfig
 ) {
 
-  const combined =
-    passwords.join(
-      "\u0000"
+  const salt =
+    base64ToBytes(
+      passwordConfig.salt
     );
+
+  const verifier =
+    await deriveVerifier(
+      password,
+      salt
+    );
+
+  return (
+    verifier ===
+    passwordConfig.verifier
+  );
+}
+
+
+async function login(
+  password1,
+  password2,
+  password3
+) {
+
+  const raw =
+    localStorage.getItem(
+      CONFIG_KEY
+    );
+
+  if (!raw) {
+
+    throw new Error(
+      "Acesso ainda não criado."
+    );
+
+  }
+
+  const config =
+    JSON.parse(raw);
+
+
+  if (
+    config.version !==
+    CONFIG_VERSION
+  ) {
+
+    throw new Error(
+      "Configuração incompatível."
+    );
+
+  }
+
+
+  if (
+    !config.passwords ||
+    config.passwords.length !== 3
+  ) {
+
+    throw new Error(
+      "Configuração de acesso inválida."
+    );
+
+  }
+
+
+  const valid1 =
+    await verifyPassword(
+      password1,
+      config.passwords[0]
+    );
+
+  const valid2 =
+    await verifyPassword(
+      password2,
+      config.passwords[1]
+    );
+
+  const valid3 =
+    await verifyPassword(
+      password3,
+      config.passwords[2]
+    );
+
+
+  if (
+    !valid1 ||
+    !valid2 ||
+    !valid3
+  ) {
+
+    return false;
+
+  }
+
+
+  const vaultSalt =
+    base64ToBytes(
+      config.vaultSalt
+    );
+
+
+  currentVaultKey =
+    await createVaultKey(
+      password1,
+      password2,
+      password3,
+      vaultSalt
+    );
+
+
+  await loadVault();
+
+  return true;
+
+}
+
+
+/* =========================================================
+   TELA
+========================================================= */
+
+function showScreen(
+  screen
+) {
+
+  if (loginScreen) {
+    loginScreen.style.display =
+      "none";
+  }
+
+  if (setupScreen) {
+    setupScreen.style.display =
+      "none";
+  }
+
+  if (vaultScreen) {
+    vaultScreen.style.display =
+      "none";
+  }
+
+
+  if (screen) {
+    screen.style.display =
+      "block";
+  }
+
+}
+
+
+function showLogin() {
+  showScreen(loginScreen);
+}
+
+
+function showSetup() {
+  showScreen(setupScreen);
+}
+
+
+function showVault() {
+  showScreen(vaultScreen);
+}
+
+
+/* =========================================================
+   MENSAGENS
+========================================================= */
+
+function setMessage(
+  element,
+  message
+) {
+
+  if (!element) {
+    return;
+  }
+
+  element.textContent =
+    message;
+
+}
+
+
+function clearMessage(
+  element
+) {
+
+  if (!element) {
+    return;
+  }
+
+  element.textContent =
+    "";
+
+}
+
+
+/* =========================================================
+   RENDERIZAÇÃO DOS DADOS
+========================================================= */
+
+async function renderVault() {
+
+  const list =
+    firstElement([
+      "dataList",
+      "vaultDataList",
+      "itemsList"
+    ]);
+
+  if (!list) {
+    return;
+  }
+
+
+  list.innerHTML =
+    "";
+
+
+  const vault =
+    await loadVault();
+
+
+  if (
+    vault.items.length === 0
+  ) {
+
+    const empty =
+      document.createElement(
+        "p"
+      );
+
+    empty.textContent =
+      "Nenhum dado protegido ainda.";
+
+    list.appendChild(
+      empty
+    );
+
+    return;
+
+  }
+
+
+  for (
+    const item of vault.items
+  ) {
+
+    const card =
+      createItemCard(
+        item
+      );
+
+    list.appendChild(
+      card
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   CARD INDIVIDUAL
+========================================================= */
+
+function createItemCard(
+  item
+) {
+
+  const card =
+    document.createElement(
+      "div"
+    );
+
+  card.className =
+    "data-card";
+
+
+  const title =
+    document.createElement(
+      "h3"
+    );
+
+  title.textContent =
+    "Dado protegido";
+
+
+  const status =
+    document.createElement(
+      "p"
+    );
+
+  status.textContent =
+    "Conteúdo criptografado";
+
+
+  const actions =
+    document.createElement(
+      "div"
+    );
+
+  actions.className =
+    "data-actions";
+
+
+  const decryptButton =
+    document.createElement(
+      "button"
+    );
+
+  decryptButton.type =
+    "button";
+
+  decryptButton.textContent =
+    "🔓 DESCRIPTOGRAFAR";
+
+
+  const saveButton =
+    document.createElement(
+      "button"
+    );
+
+  saveButton.type =
+    "button";
+
+  saveButton.textContent =
+    "💾 SALVAR .ENC";
+
+
+  const deleteButton =
+    document.createElement(
+      "button"
+    );
+
+  deleteButton.type =
+    "button";
+
+  deleteButton.textContent =
+    "🗑️ EXCLUIR";
+
+
+  decryptButton.addEventListener(
+    "click",
+    () => {
+      decryptItem(item.id);
+    }
+  );
+
+
+  saveButton.addEventListener(
+    "click",
+    () => {
+      saveItemAsFile(item.id);
+    }
+  );
+
+
+  deleteButton.addEventListener(
+    "click",
+    () => {
+      deleteItem(item.id);
+    }
+  );
+
+
+  actions.appendChild(
+    decryptButton
+  );
+
+  actions.appendChild(
+    saveButton
+  );
+
+  actions.appendChild(
+    deleteButton
+  );
+
+
+  card.appendChild(
+    title
+  );
+
+  card.appendChild(
+    status
+  );
+
+  card.appendChild(
+    actions
+  );
+
+
+  return card;
+
+}
+
+
+/* =========================================================
+   ADICIONAR DADO
+========================================================= */
+
+function openAddData() {
+
+  const modal =
+    firstElement([
+      "addDataModal",
+      "dataModal"
+    ]);
+
+  if (modal) {
+    modal.style.display =
+      "flex";
+  }
+
+}
+
+
+function closeAddData() {
+
+  const modal =
+    firstElement([
+      "addDataModal",
+      "dataModal"
+    ]);
+
+  if (modal) {
+    modal.style.display =
+      "none";
+  }
+
+}
+
+
+async function encryptNewData() {
+
+  const textInput =
+    firstElement([
+      "newDataText",
+      "dataText",
+      "newDataContent"
+    ]);
+
+  const passwordInput =
+    firstElement([
+      "newDataPassword",
+      "dataPassword"
+    ]);
+
+  const confirmInput =
+    firstElement([
+      "newDataPasswordConfirm",
+      "dataPasswordConfirm"
+    ]);
+
+
+  const text =
+    textInput
+      ? textInput.value
+      : "";
+
+  const password =
+    passwordInput
+      ? passwordInput.value
+      : "";
+
+  const confirmation =
+    confirmInput
+      ? confirmInput.value
+      : "";
+
+
+  if (!text.trim()) {
+
+    alert(
+      "Digite alguma informação."
+    );
+
+    return;
+
+  }
+
+
+  if (!password) {
+
+    alert(
+      "Crie uma senha para este dado."
+    );
+
+    return;
+
+  }
+
+
+  if (
+    password !==
+    confirmation
+  ) {
+
+    alert(
+      "As senhas não são iguais."
+    );
+
+    return;
+
+  }
+
 
   const salt =
-    randomBytes(
-      16
-    );
-
-  const iv =
-    randomBytes(
-      12
-    );
-
-  const material =
-    await crypto.subtle.importKey(
-      "raw",
-      textToBytes(
-        combined
-      ),
-      "PBKDF2",
-      false,
-      [
-        "deriveKey"
-      ]
-    );
+    randomBytes(16);
 
   const key =
-    await crypto.subtle.deriveKey(
-      {
-        name:
-          "PBKDF2",
-
-        salt,
-
-        iterations:
-          PBKDF2_ITERATIONS,
-
-        hash:
-          "SHA-256"
-      },
-      material,
-      {
-        name:
-          "AES-GCM",
-
-        length:
-          256
-      },
-      false,
-      [
-        "encrypt",
-        "decrypt"
-      ]
+    await deriveKey(
+      password,
+      salt
     );
 
-  const payload =
-    JSON.stringify(
-      vault
-    );
 
   const encrypted =
-    await crypto.subtle.encrypt(
-      {
-        name:
-          "AES-GCM",
-
-        iv
-      },
-      key,
-      textToBytes(
-        payload
-      )
+    await encryptText(
+      text,
+      key
     );
 
-  return {
+
+  const item = {
 
     format:
-      "Origon58 Encrypted Vault",
+      "Origon58 Secure Item",
 
     version:
-      VAULT_VERSION,
+      ITEM_VERSION,
+
+    id:
+      crypto.randomUUID(),
+
+    createdAt:
+      new Date().toISOString(),
 
     kdf: {
 
@@ -930,164 +1181,6 @@ async function encryptVault(
         "AES-GCM",
 
       iv:
-        bytesToBase64(
-          iv
-        )
-
-    },
-
-    ciphertext:
-      bytesToBase64(
-        new Uint8Array(
-          encrypted
-        )
-      )
-
-  };
-
-}
-
-
-async function decryptVault(
-  packageData,
-  passwords
-) {
-
-  const combined =
-    passwords.join(
-      "\u0000"
-    );
-
-  const salt =
-    base64ToBytes(
-      packageData.kdf.salt
-    );
-
-  const iv =
-    base64ToBytes(
-      packageData.cipher.iv
-    );
-
-  const ciphertext =
-    base64ToBytes(
-      packageData.ciphertext
-    );
-
-  const material =
-    await crypto.subtle.importKey(
-      "raw",
-      textToBytes(
-        combined
-      ),
-      "PBKDF2",
-      false,
-      [
-        "deriveKey"
-      ]
-    );
-
-  const key =
-    await crypto.subtle.deriveKey(
-      {
-        name:
-          "PBKDF2",
-
-        salt,
-
-        iterations:
-          packageData.kdf.iterations,
-
-        hash:
-          "SHA-256"
-      },
-      material,
-      {
-        name:
-          "AES-GCM",
-
-        length:
-          256
-      },
-      false,
-      [
-        "decrypt"
-      ]
-    );
-
-  const decrypted =
-    await crypto.subtle.decrypt(
-      {
-        name:
-          "AES-GCM",
-
-        iv
-      },
-      key,
-      ciphertext
-    );
-
-  return JSON.parse(
-    bytesToText(
-      new Uint8Array(
-        decrypted
-      )
-    )
-  );
-
-}
-
-
-/* ==================================================
-   DADOS INDIVIDUAIS
-================================================== */
-
-async function createEncryptedItem(
-  text,
-  password
-) {
-
-  const encrypted =
-    await encryptText(
-      text,
-      password
-    );
-
-  return {
-
-    format:
-      "Origon58 Secure Item",
-
-    version:
-      ITEM_VERSION,
-
-    id:
-      createId(),
-
-    createdAt:
-      new Date().toISOString(),
-
-    kdf: {
-
-      name:
-        "PBKDF2",
-
-      hash:
-        "SHA-256",
-
-      iterations:
-        PBKDF2_ITERATIONS,
-
-      salt:
-        encrypted.salt
-
-    },
-
-    cipher: {
-
-      name:
-        "AES-GCM",
-
-      iv:
         encrypted.iv
 
     },
@@ -1097,93 +1190,243 @@ async function createEncryptedItem(
 
   };
 
+
+  const vault =
+    await loadVault();
+
+
+  vault.items.push(
+    item
+  );
+
+
+  await saveVault(
+    vault
+  );
+
+
+  if (textInput) {
+    textInput.value =
+      "";
+  }
+
+  if (passwordInput) {
+    passwordInput.value =
+      "";
+  }
+
+  if (confirmInput) {
+    confirmInput.value =
+      "";
+  }
+
+
+  closeAddData();
+
+  await renderVault();
+
+
+  alert(
+    "Dado criptografado com sucesso! 🔐"
+  );
+
 }
 
+
+/* =========================================================
+   DESCRIPTOGRAFAR ITEM DO COFRE
+========================================================= */
 
 async function decryptItem(
-  item,
-  password
+  itemId
 ) {
 
-  return decryptText(
-    item,
-    password
-  );
+  try {
 
-}
+    const vault =
+      await loadVault();
 
 
-/* ==================================================
-   ARQUIVO .ENC INDIVIDUAL
-================================================== */
+    const item =
+      vault.items.find(
+        (entry) =>
+          entry.id ===
+          itemId
+      );
 
-function createItemFile(
-  item
-) {
 
-  const payload = {
+    if (!item) {
 
-    format:
-      "origon58-item",
+      alert(
+        "Dado não encontrado."
+      );
 
-    version:
-      ITEM_VERSION,
+      return;
 
-    id:
-      item.id,
-
-    createdAt:
-      item.createdAt,
-
-    kdf:
-      item.kdf,
-
-    cipher:
-      item.cipher,
-
-    ciphertext:
-      item.ciphertext
-
-  };
-
-  return new Blob(
-    [
-      JSON.stringify(
-        payload,
-        null,
-        2
-      )
-    ],
-    {
-      type:
-        "application/octet-stream"
     }
-  );
-
-}
 
 
-async function saveItemFile(
-  item
-) {
+    const password =
+      prompt(
+        "Digite a senha deste dado:"
+      );
 
-  const blob =
-    createItemFile(
-      item
+
+    if (
+      password === null
+    ) {
+
+      return;
+
+    }
+
+
+    const salt =
+      base64ToBytes(
+        item.kdf.salt
+      );
+
+
+    const key =
+      await deriveKey(
+        password,
+        salt
+      );
+
+
+    const plaintext =
+      await crypto.subtle.decrypt(
+        {
+          name:
+            "AES-GCM",
+
+          iv:
+            base64ToBytes(
+              item.cipher.iv
+            )
+        },
+        key,
+        base64ToBytes(
+          item.ciphertext
+        )
+      );
+
+
+    const decoder =
+      new TextDecoder();
+
+
+    const text =
+      decoder.decode(
+        plaintext
+      );
+
+
+    alert(
+      "Conteúdo:\n\n" +
+      text
     );
 
-  const filename =
-    "origon58-item-" +
-    item.id +
-    ".enc";
+  }
+  catch (error) {
+
+    alert(
+      "Não foi possível descriptografar este dado."
+    );
+
+  }
+
+}
 
 
-  if (
-    "showSaveFilePicker" in
-    window
-  ) {
+/* =========================================================
+   SALVAR ITEM COMO .ENC
+========================================================= */
 
-    try {
+async function saveItemAsFile(
+  itemId
+) {
+
+  try {
+
+    const vault =
+      await loadVault();
+
+
+    const item =
+      vault.items.find(
+        (entry) =>
+          entry.id ===
+          itemId
+      );
+
+
+    if (!item) {
+
+      alert(
+        "Dado não encontrado."
+      );
+
+      return;
+
+    }
+
+
+    const fileData = {
+
+      format:
+        "origon58-item",
+
+      version:
+        ITEM_VERSION,
+
+      id:
+        item.id,
+
+      createdAt:
+        item.createdAt,
+
+      kdf:
+        item.kdf,
+
+      cipher:
+        item.cipher,
+
+      ciphertext:
+        item.ciphertext
+
+    };
+
+
+    const json =
+      JSON.stringify(
+        fileData,
+        null,
+        2
+      );
+
+
+    const blob =
+      new Blob(
+        [
+          json
+        ],
+        {
+          type:
+            "application/json"
+        }
+      );
+
+
+    const filename =
+      "origon58-item-" +
+      item.id +
+      ".enc";
+
+
+    if (
+      window.showSaveFilePicker
+    ) {
 
       const handle =
         await window.showSaveFilePicker(
@@ -1194,7 +1437,7 @@ async function saveItemFile(
             types: [
               {
                 description:
-                  "Arquivo criptografado Origon58",
+                  "Arquivo Origon58",
 
                 accept: {
                   "application/octet-stream":
@@ -1207,1232 +1450,1168 @@ async function saveItemFile(
           }
         );
 
+
       const writable =
         await handle.createWritable();
+
 
       await writable.write(
         blob
       );
 
+
       await writable.close();
 
-      alert(
-        "Dado salvo com sucesso! 💾"
+    }
+    else {
+
+      const url =
+        URL.createObjectURL(
+          blob
+        );
+
+
+      const link =
+        document.createElement(
+          "a"
+        );
+
+
+      link.href =
+        url;
+
+      link.download =
+        filename;
+
+
+      document.body.appendChild(
+        link
       );
 
-      return;
 
-    } catch (
-      error
-    ) {
+      link.click();
 
-      if (
-        error.name ===
-        "AbortError"
-      ) {
+      link.remove();
 
-        return;
 
-      }
+      URL.revokeObjectURL(
+        url
+      );
 
     }
 
+
+    alert(
+      "Arquivo .enc salvo com sucesso! 💾"
+    );
+
   }
+  catch (error) {
 
+    if (
+      error &&
+      error.name ===
+        "AbortError"
+    ) {
 
-  const url =
-    URL.createObjectURL(
-      blob
+      return;
+
+    }
+
+    alert(
+      "Não foi possível salvar o arquivo .enc."
     );
 
-  const link =
-    document.createElement(
-      "a"
-    );
-
-  link.href =
-    url;
-
-  link.download =
-    filename;
-
-  document.body.appendChild(
-    link
-  );
-
-  link.click();
-
-  link.remove();
-
-  URL.revokeObjectURL(
-    url
-  );
-
-  alert(
-    "Dado salvo com sucesso! 💾"
-  );
+  }
 
 }
 
 
-/* ==================================================
-   RENDERIZAÇÃO
-================================================== */
+/* =========================================================
+   EXCLUIR ITEM
+========================================================= */
 
-function renderVault() {
+async function deleteItem(
+  itemId
+) {
 
-  const vault =
-    loadVault();
-
-  dataList.innerHTML =
-    "";
-
-  dataCount.textContent =
-    String(
-      vault.items.length
+  const confirmed =
+    confirm(
+      "Excluir somente este dado?"
     );
 
 
-  if (
-    vault.items.length ===
-    0
-  ) {
+  if (!confirmed) {
+    return;
+  }
 
-    dataList.innerHTML =
-      `
-        <div class="empty-state">
-          Nenhum dado criptografado no cofre.
-        </div>
-      `;
+
+  const vault =
+    await loadVault();
+
+
+  vault.items =
+    vault.items.filter(
+      (item) =>
+        item.id !==
+        itemId
+    );
+
+
+  await saveVault(
+    vault
+  );
+
+
+  await renderVault();
+
+}
+
+
+/* =========================================================
+   LIMPAR COFRE
+========================================================= */
+
+function openClearVault() {
+
+  const modal =
+    firstElement([
+      "clearVaultModal"
+    ]);
+
+  if (modal) {
+    modal.style.display =
+      "flex";
+  }
+
+}
+
+
+function closeClearVault() {
+
+  const modal =
+    firstElement([
+      "clearVaultModal"
+    ]);
+
+  if (modal) {
+    modal.style.display =
+      "none";
+  }
+
+}
+
+
+async function clearVault() {
+
+  const passwordInput =
+    firstElement([
+      "clearVaultPassword",
+      "cleanupPassword"
+    ]);
+
+  const confirmationInput =
+    firstElement([
+      "clearVaultPasswordConfirm",
+      "cleanupPasswordConfirm"
+    ]);
+
+
+  const password =
+    passwordInput
+      ? passwordInput.value
+      : "";
+
+  const confirmation =
+    confirmationInput
+      ? confirmationInput.value
+      : "";
+
+
+  if (!password) {
+
+    alert(
+      "Crie uma senha para confirmar a limpeza."
+    );
 
     return;
 
   }
 
 
-  vault.items.forEach(
-    (
-      item,
-      index
-    ) => {
+  if (
+    password !==
+    confirmation
+  ) {
 
-      const card =
-        document.createElement(
-          "article"
-        );
+    alert(
+      "As senhas não são iguais."
+    );
 
-      card.className =
-        "data-card";
+    return;
 
+  }
 
-      const title =
-        document.createElement(
-          "h3"
-        );
 
-      title.textContent =
-        "Dado " +
-        (index + 1);
+  const firstConfirmation =
+    confirm(
+      "ATENÇÃO: todos os dados do cofre serão apagados."
+    );
 
 
-      const ciphertext =
-        document.createElement(
-          "div"
-        );
+  if (!firstConfirmation) {
+    return;
+  }
 
-      ciphertext.className =
-        "ciphertext";
 
-      ciphertext.textContent =
-        item.ciphertext;
+  const secondConfirmation =
+    confirm(
+      "Tem certeza que deseja apagar o cofre inteiro?"
+    );
 
 
-      const actions =
-        document.createElement(
-          "div"
-        );
+  if (!secondConfirmation) {
+    return;
+  }
 
-      actions.className =
-        "data-actions";
 
+  localStorage.removeItem(
+    VAULT_KEY
+  );
 
-      const decryptButton =
-        document.createElement(
-          "button"
-        );
 
-      decryptButton.type =
-        "button";
+  currentVaultKey =
+    null;
 
-      decryptButton.className =
-        "secondary-button";
 
-      decryptButton.textContent =
-        "🔓 DESCRIPTOGRAFAR";
+  if (passwordInput) {
+    passwordInput.value =
+      "";
+  }
 
+  if (confirmationInput) {
+    confirmationInput.value =
+      "";
+  }
 
-      const saveButton =
-        document.createElement(
-          "button"
-        );
 
-      saveButton.type =
-        "button";
+  closeClearVault();
 
-      saveButton.className =
-        "primary-button";
+  showSetup();
 
-      saveButton.textContent =
-        "💾 SALVAR .ENC";
 
-
-      const deleteButton =
-        document.createElement(
-          "button"
-        );
-
-      deleteButton.type =
-        "button";
-
-      deleteButton.className =
-        "danger-button";
-
-      deleteButton.textContent =
-        "🗑️ EXCLUIR";
-
-
-      decryptButton.addEventListener(
-        "click",
-        async () => {
-
-          const password =
-            prompt(
-              "Digite a senha deste dado:"
-            );
-
-          if (
-            password ===
-            null
-          ) {
-
-            return;
-
-          }
-
-          if (
-            password.length ===
-            0
-          ) {
-
-            alert(
-              "Digite a senha."
-            );
-
-            return;
-
-          }
-
-
-          try {
-
-            const text =
-              await decryptItem(
-                item,
-                password
-              );
-
-            alert(
-              "Conteúdo descriptografado:\n\n" +
-              text
-            );
-
-          } catch (
-            error
-          ) {
-
-            alert(
-              "Senha incorreta ou dado inválido."
-            );
-
-          }
-
-        }
-      );
-
-
-      saveButton.addEventListener(
-        "click",
-        async () => {
-
-          await saveItemFile(
-            item
-          );
-
-        }
-      );
-
-
-      deleteButton.addEventListener(
-        "click",
-        () => {
-
-          const confirmed =
-            confirm(
-              "Excluir este dado do cofre?"
-            );
-
-          if (
-            !confirmed
-          ) {
-
-            return;
-
-          }
-
-
-          const vault =
-            loadVault();
-
-          vault.items =
-            vault.items.filter(
-              (
-                currentItem
-              ) =>
-                currentItem.id !==
-                item.id
-            );
-
-          saveVault(
-            vault
-          );
-
-          renderVault();
-
-        }
-      );
-
-
-      actions.appendChild(
-        decryptButton
-      );
-
-      actions.appendChild(
-        saveButton
-      );
-
-      actions.appendChild(
-        deleteButton
-      );
-
-
-      card.appendChild(
-        title
-      );
-
-      card.appendChild(
-        ciphertext
-      );
-
-      card.appendChild(
-        actions
-      );
-
-
-      dataList.appendChild(
-        card
-      );
-
-    }
+  alert(
+    "Cofre limpo. Crie um novo acesso."
   );
 
 }
 
 
-/* ==================================================
-   MODAL — ADICIONAR DADO
-================================================== */
+/* =========================================================
+   LIMPAR TEMPORÁRIOS
+========================================================= */
 
-function openAddDataModal() {
+function clearTemporaryData() {
 
-  newDataText.value =
+  temporarySavedData =
     "";
 
-  newDataPassword.value =
-    "";
+  temporarySavedFile =
+    null;
 
-  newDataPasswordConfirm.value =
-    "";
 
-  addDataMessage.textContent =
-    "";
+  const fileInput =
+    byId(
+      "savedDataFile"
+    );
 
-  addDataModal.classList.remove(
-    "hidden"
+  const passwordInput =
+    byId(
+      "savedDataPassword"
+    );
+
+
+  if (fileInput) {
+    fileInput.value =
+      "";
+  }
+
+
+  if (passwordInput) {
+    passwordInput.value =
+      "";
+  }
+
+
+  const result =
+    byId(
+      "savedDataResult"
+    );
+
+  const resultText =
+    byId(
+      "savedDataResultText"
+    );
+
+
+  if (result) {
+    result.style.display =
+      "none";
+  }
+
+
+  if (resultText) {
+    resultText.textContent =
+      "";
+  }
+
+
+  alert(
+    "Dados temporários do backup foram excluídos."
   );
-
-  newDataText.focus();
 
 }
 
 
-function closeAddDataModal() {
+/* =========================================================
+   DESCRIPTOGRAFAR .ENC EXTERNO
+========================================================= */
 
-  addDataModal.classList.add(
-    "hidden"
-  );
+function openDecryptSaved() {
+
+  const modal =
+    byId(
+      "decryptSavedModal"
+    );
+
+  if (modal) {
+    modal.style.display =
+      "flex";
+  }
 
 }
 
 
-addDataButton.addEventListener(
-  "click",
-  openAddDataModal
-);
+function closeDecryptSaved() {
+
+  const modal =
+    byId(
+      "decryptSavedModal"
+    );
+
+  if (modal) {
+    modal.style.display =
+      "none";
+  }
+
+}
 
 
-cancelAddDataButton.addEventListener(
-  "click",
-  closeAddDataModal
-);
+async function decryptSavedData() {
+
+  const fileInput =
+    byId(
+      "savedDataFile"
+    );
+
+  const passwordInput =
+    byId(
+      "savedDataPassword"
+    );
 
 
-encryptDataButton.addEventListener(
-  "click",
-  async () => {
+  if (
+    !fileInput ||
+    !fileInput.files ||
+    !fileInput.files[0]
+  ) {
+
+    alert(
+      "Selecione um arquivo .enc."
+    );
+
+    return;
+
+  }
+
+
+  const file =
+    fileInput.files[0];
+
+
+  if (
+    !file.name
+      .toLowerCase()
+      .endsWith(".enc")
+  ) {
+
+    alert(
+      "Selecione um arquivo .enc."
+    );
+
+    return;
+
+  }
+
+
+  const password =
+    passwordInput
+      ? passwordInput.value
+      : "";
+
+
+  if (!password) {
+
+    alert(
+      "Digite a senha deste dado."
+    );
+
+    return;
+
+  }
+
+
+  try {
 
     const text =
-      newDataText.value;
-
-    const password =
-      newDataPassword.value;
-
-    const confirmation =
-      newDataPasswordConfirm.value;
+      await file.text();
 
 
-    addDataMessage.textContent =
-      "";
-
-
-    if (
-      !text.trim()
-    ) {
-
-      addDataMessage.textContent =
-        "Digite uma informação.";
-
-      return;
-
-    }
-
-
-    if (
-      !password
-    ) {
-
-      addDataMessage.textContent =
-        "Crie uma senha para este dado.";
-
-      return;
-
-    }
-
-
-    if (
-      password !==
-      confirmation
-    ) {
-
-      addDataMessage.textContent =
-        "As senhas não conferem.";
-
-      return;
-
-    }
-
-
-    try {
-
-      encryptDataButton.disabled =
-        true;
-
-      encryptDataButton.textContent =
-        "CRIPTOGRAFANDO...";
-
-
-      const item =
-        await createEncryptedItem(
-          text,
-          password
-        );
-
-
-      const vault =
-        loadVault();
-
-      vault.items.push(
-        item
-      );
-
-      saveVault(
-        vault
+    const data =
+      JSON.parse(
+        text
       );
 
 
-      closeAddDataModal();
-
-      renderVault();
-
-
-    } catch (
-      error
-    ) {
-
-      addDataMessage.textContent =
-        "Não foi possível criptografar o dado.";
-
-    } finally {
-
-      encryptDataButton.disabled =
-        false;
-
-      encryptDataButton.textContent =
-        "🔐 CRIPTOGRAFAR";
-
-    }
-
-  }
-);
-
-
-/* ==================================================
-   LIMPAR COFRE
-================================================== */
-
-clearVaultButton.addEventListener(
-  "click",
-  () => {
-
-    clearVaultPassword.value =
-      "";
-
-    clearVaultPasswordConfirm.value =
-      "";
-
-    clearVaultMessage.textContent =
-      "";
-
-    clearVaultModal.classList.remove(
-      "hidden"
-    );
-
-    clearVaultPassword.focus();
-
-  }
-);
-
-
-cancelClearVaultButton.addEventListener(
-  "click",
-  () => {
-
-    clearVaultModal.classList.add(
-      "hidden"
-    );
-
-  }
-);
-
-
-confirmClearVaultButton.addEventListener(
-  "click",
-  async () => {
-
-    const password =
-      clearVaultPassword.value;
-
-    const confirmation =
-      clearVaultPasswordConfirm.value;
-
-
-    clearVaultMessage.textContent =
-      "";
-
-
     if (
-      !password
+      data.format !==
+        "origon58-item"
     ) {
 
-      clearVaultMessage.textContent =
-        "Crie uma senha para confirmar a limpeza.";
-
-      return;
-
-    }
-
-
-    if (
-      password !==
-      confirmation
-    ) {
-
-      clearVaultMessage.textContent =
-        "As senhas não conferem.";
-
-      return;
-
-    }
-
-
-    const firstConfirmation =
-      confirm(
-        "ATENÇÃO: todos os dados do cofre serão apagados. Continuar?"
+      throw new Error(
+        "Formato inválido."
       );
 
-    if (
-      !firstConfirmation
-    ) {
-
-      return;
-
     }
 
 
-    const secondConfirmation =
-      confirm(
-        "Confirma novamente que deseja APAGAR TODOS OS DADOS?"
+    if (
+      data.version !==
+      ITEM_VERSION
+    ) {
+
+      throw new Error(
+        "Versão inválida."
       );
 
+    }
+
+
     if (
-      !secondConfirmation
+      !data.kdf ||
+      !data.cipher ||
+      !data.ciphertext
     ) {
 
-      return;
+      throw new Error(
+        "Estrutura inválida."
+      );
 
     }
 
 
-    localStorage.removeItem(
-      VAULT_KEY
-    );
+    const salt =
+      base64ToBytes(
+        data.kdf.salt
+      );
 
 
-    clearVaultModal.classList.add(
-      "hidden"
-    );
+    const key =
+      await deriveKey(
+        password,
+        salt
+      );
 
 
-    renderVault();
+    const plaintext =
+      await crypto.subtle.decrypt(
+        {
+          name:
+            "AES-GCM",
+
+          iv:
+            base64ToBytes(
+              data.cipher.iv
+            )
+        },
+        key,
+        base64ToBytes(
+          data.ciphertext
+        )
+      );
 
 
-    alert(
-      "Cofre limpo com sucesso."
-    );
-
-  }
-);
+    const decoder =
+      new TextDecoder();
 
 
-/* ==================================================
-   LIMPAR TEMPORÁRIOS
-================================================== */
+    const decrypted =
+      decoder.decode(
+        plaintext
+      );
 
-clearTemporaryButton.addEventListener(
-  "click",
-  () => {
 
     temporarySavedData =
-      null;
+      decrypted;
 
-    savedDataFile.value =
-      "";
+    temporarySavedFile =
+      file;
 
-    savedDataPassword.value =
-      "";
 
-    savedDataResult.classList.add(
-      "hidden"
-    );
+    const result =
+      byId(
+        "savedDataResult"
+      );
 
-    savedDataResultText.textContent =
-      "";
-
-    decryptSavedMessage.textContent =
-      "";
-
-
-    alert(
-      "Dados temporários foram excluídos."
-    );
-
-  }
-);
-
-
-/* ==================================================
-   DESCRIPTOGRAFAR DADO SALVO
-================================================== */
-
-function openDecryptSavedModal() {
-
-  savedDataFile.value =
-    "";
-
-  savedDataPassword.value =
-    "";
-
-  decryptSavedMessage.textContent =
-    "";
-
-  savedDataResult.classList.add(
-    "hidden"
-  );
-
-  savedDataResultText.textContent =
-    "";
-
-  decryptSavedModal.classList.remove(
-    "hidden"
-  );
-
-}
-
-
-function closeDecryptSavedModal() {
-
-  decryptSavedModal.classList.add(
-    "hidden"
-  );
-
-}
-
-
-decryptSavedButton.addEventListener(
-  "click",
-  openDecryptSavedModal
-);
-
-
-cancelDecryptSavedButton.addEventListener(
-  "click",
-  closeDecryptSavedModal
-);
-
-
-confirmDecryptSavedButton.addEventListener(
-  "click",
-  async () => {
-
-    decryptSavedMessage.textContent =
-      "";
-
-    savedDataResult.classList.add(
-      "hidden"
-    );
-
-
-    const file =
-      savedDataFile.files[0];
-
-    const password =
-      savedDataPassword.value;
-
-
-    if (
-      !file
-    ) {
-
-      decryptSavedMessage.textContent =
-        "Escolha um arquivo .enc.";
-
-      return;
-
-    }
-
-
-    if (
-      !password
-    ) {
-
-      decryptSavedMessage.textContent =
-        "Digite a senha do dado.";
-
-      return;
-
-    }
-
-
-    try {
-
-      confirmDecryptSavedButton.disabled =
-        true;
-
-      confirmDecryptSavedButton.textContent =
-        "DESCRIPTOGRAFANDO...";
-
-
-      const rawText =
-        await file.text();
-
-
-      const packageData =
-        JSON.parse(
-          rawText
-        );
-
-
-      if (
-        packageData.format !==
-        "origon58-item"
-      ) {
-
-        throw new Error(
-          "Arquivo incompatível."
-        );
-
-      }
-
-
-      if (
-        packageData.version !==
-        ITEM_VERSION
-      ) {
-
-        throw new Error(
-          "Versão incompatível."
-        );
-
-      }
-
-
-      if (
-        !packageData.kdf ||
-        !packageData.cipher ||
-        !packageData.ciphertext
-      ) {
-
-        throw new Error(
-          "Estrutura inválida."
-        );
-
-      }
-
-
-      const text =
-        await decryptText(
-          packageData,
-          password
-        );
-
-
-      temporarySavedData =
-        text;
-
-
-      savedDataResultText.textContent =
-        text;
-
-      savedDataResult.classList.remove(
-        "hidden"
+    const resultText =
+      byId(
+        "savedDataResultText"
       );
 
 
-      decryptSavedMessage.textContent =
-        "Dado descriptografado com sucesso!";
+    if (resultText) {
 
-
-    } catch (
-      error
-    ) {
-
-      decryptSavedMessage.textContent =
-        "Não foi possível descriptografar este dado. Verifique o arquivo e a senha.";
-
-    } finally {
-
-      confirmDecryptSavedButton.disabled =
-        false;
-
-      confirmDecryptSavedButton.textContent =
-        "🔓 DESCRIPTOGRAFAR";
+      resultText.textContent =
+        decrypted;
 
     }
 
+
+    if (result) {
+
+      result.style.display =
+        "block";
+
+    }
+
+
   }
-);
+  catch (error) {
+
+    temporarySavedData =
+      "";
+
+    alert(
+      "Não foi possível descriptografar este arquivo."
+    );
+
+  }
+
+}
 
 
-/* ==================================================
-   SAIR / VOLTAR PARA SENHA
-================================================== */
+/* =========================================================
+   SAIR DO COFRE
+========================================================= */
 
 function logout() {
 
   currentVaultKey =
     null;
 
+
   temporarySavedData =
+    "";
+
+  temporarySavedFile =
     null;
 
 
-  loginForm.reset();
-
-  loginMessage.textContent =
-    "";
-
-
-  showScreen(
-    loginScreen
-  );
+  showLogin();
 
 }
 
 
-logoutButton.addEventListener(
-  "click",
-  logout
-);
+/* =========================================================
+   EVENTOS
+========================================================= */
+
+function setupEvents() {
 
 
-lockButton.addEventListener(
-  "click",
-  logout
-);
+  /* ---------- SETUP ---------- */
+
+  const setupForm =
+    firstElement([
+      "setupForm"
+    ]);
 
 
-/* ==================================================
-   CONFIGURAÇÃO INICIAL
-================================================== */
+  if (setupForm) {
 
-setupForm.addEventListener(
-  "submit",
-  async (
-    event
-  ) => {
+    setupForm.addEventListener(
+      "submit",
+      async (event) => {
 
-    event.preventDefault();
-
-    setupMessage.textContent =
-      "";
+        event.preventDefault();
 
 
-    const password1 =
-      document.getElementById(
-        "setupPassword1"
-      ).value;
+        const password1 =
+          firstElement([
+            "setupPassword1",
+            "password1"
+          ]);
 
-    const password1Confirm =
-      document.getElementById(
-        "setupPassword1Confirm"
-      ).value;
+        const password2 =
+          firstElement([
+            "setupPassword2",
+            "password2"
+          ]);
 
-    const password2 =
-      document.getElementById(
-        "setupPassword2"
-      ).value;
-
-    const password2Confirm =
-      document.getElementById(
-        "setupPassword2Confirm"
-      ).value;
-
-    const password3 =
-      document.getElementById(
-        "setupPassword3"
-      ).value;
-
-    const password3Confirm =
-      document.getElementById(
-        "setupPassword3Confirm"
-      ).value;
+        const password3 =
+          firstElement([
+            "setupPassword3",
+            "password3"
+          ]);
 
 
-    if (
-      password1 !==
-      password1Confirm ||
-      password2 !==
-      password2Confirm ||
-      password3 !==
-      password3Confirm
-    ) {
-
-      setupMessage.textContent =
-        "As senhas não conferem.";
-
-      return;
-
-    }
+        const message =
+          firstElement([
+            "setupMessage",
+            "setupResult",
+            "setupError"
+          ]);
 
 
-    if (
-      !password1 ||
-      !password2 ||
-      !password3
-    ) {
+        try {
 
-      setupMessage.textContent =
-        "Preencha as três senhas.";
-
-      return;
-
-    }
+          if (message) {
+            message.textContent =
+              "Criando acesso...";
+          }
 
 
-    try {
+          await createAccess(
+            password1
+              ? password1.value
+              : "",
 
-      const verifiers =
-        await Promise.all(
-          [
-            password1,
-            password2,
+            password2
+              ? password2.value
+              : "",
+
             password3
-          ].map(
-            createVerifier
-          )
-        );
+              ? password3.value
+              : ""
+          );
 
 
-      const vault =
-        getEmptyVault();
+          if (password1) {
+            password1.value =
+              "";
+          }
+
+          if (password2) {
+            password2.value =
+              "";
+          }
+
+          if (password3) {
+            password3.value =
+              "";
+          }
 
 
-      const encryptedVault =
-        await encryptVault(
-          vault,
-          [
-            password1,
-            password2,
-            password3
-          ]
-        );
+          clearMessage(
+            message
+          );
 
 
-      const config = {
+          showVault();
 
-        format:
-          "Origon58 Configuration",
+          await renderVault();
 
-        version:
-          CONFIG_VERSION,
+        }
+        catch (error) {
 
-        verifiers,
-
-        vaultSalt:
-          encryptedVault.kdf.salt
-
-      };
+          console.error(
+            "Origon58 setup error:",
+            error
+          );
 
 
-      localStorage.setItem(
-        CONFIG_KEY,
-        JSON.stringify(
-          config
-        )
-      );
+          setMessage(
+            message,
+            "Não foi possível criar o acesso."
+          );
 
+        }
 
-      localStorage.setItem(
-        VAULT_KEY,
-        JSON.stringify(
-          vault
-        )
-      );
-
-
-      setupForm.reset();
-
-
-      showScreen(
-        loginScreen
-      );
-
-
-      alert(
-        "Acesso criado com sucesso!"
-      );
-
-
-    } catch (
-      error
-    ) {
-
-      setupMessage.textContent =
-        "Não foi possível criar o acesso.";
-
-    }
-
-  }
-);
-
-
-/* ==================================================
-   LOGIN
-================================================== */
-
-loginForm.addEventListener(
-  "submit",
-  async (
-    event
-  ) => {
-
-    event.preventDefault();
-
-    loginMessage.textContent =
-      "";
-
-
-    const password1 =
-      document.getElementById(
-        "loginPassword1"
-      ).value;
-
-    const password2 =
-      document.getElementById(
-        "loginPassword2"
-      ).value;
-
-    const password3 =
-      document.getElementById(
-        "loginPassword3"
-      ).value;
-
-
-    const config =
-      loadConfig();
-
-
-    if (
-      !config ||
-      !config.verifiers
-    ) {
-
-      showScreen(
-        setupScreen
-      );
-
-      return;
-
-    }
-
-
-    const valid1 =
-      await verifyPassword(
-        password1,
-        config.verifiers[0]
-      );
-
-    const valid2 =
-      await verifyPassword(
-        password2,
-        config.verifiers[1]
-      );
-
-    const valid3 =
-      await verifyPassword(
-        password3,
-        config.verifiers[2]
-      );
-
-
-    if (
-      !valid1 ||
-      !valid2 ||
-      !valid3
-    ) {
-
-      loginMessage.textContent =
-        "por que quer entrar aqui 🤨";
-
-      loginForm.reset();
-
-      return;
-
-    }
-
-
-    currentVaultKey =
-      true;
-
-
-    loginForm.reset();
-
-    renderVault();
-
-    showScreen(
-      vaultScreen
+      }
     );
 
   }
-);
 
 
-/* ==================================================
-   SERVICE WORKER
-================================================== */
+  /* ---------- LOGIN ---------- */
 
-if (
-  "serviceWorker" in
-  navigator
-) {
+  const loginForm =
+    firstElement([
+      "loginForm"
+    ]);
 
-  window.addEventListener(
-    "load",
-    async () => {
 
-      try {
+  if (loginForm) {
 
-        const registration =
-          await navigator.serviceWorker.register(
-            "./sw.js"
+    loginForm.addEventListener(
+      "submit",
+      async (event) => {
+
+        event.preventDefault();
+
+
+        const password1 =
+          firstElement([
+            "loginPassword1",
+            "loginPassword_1"
+          ]);
+
+        const password2 =
+          firstElement([
+            "loginPassword2",
+            "loginPassword_2"
+          ]);
+
+        const password3 =
+          firstElement([
+            "loginPassword3",
+            "loginPassword_3"
+          ]);
+
+
+        const message =
+          firstElement([
+            "loginMessage",
+            "loginResult",
+            "loginError"
+          ]);
+
+
+        try {
+
+          const success =
+            await login(
+              password1
+                ? password1.value
+                : "",
+
+              password2
+                ? password2.value
+                : "",
+
+              password3
+                ? password3.value
+                : ""
+            );
+
+
+          if (!success) {
+
+            currentVaultKey =
+              null;
+
+
+            setMessage(
+              message,
+              "por que quer entrar aqui 🤨"
+            );
+
+            return;
+
+          }
+
+
+          clearMessage(
+            message
           );
 
-        await registration.update();
 
-      } catch (
-        error
+          showVault();
+
+          await renderVault();
+
+        }
+        catch (error) {
+
+          console.error(
+            "Origon58 login error:",
+            error
+          );
+
+
+          currentVaultKey =
+            null;
+
+
+          setMessage(
+            message,
+            "por que quer entrar aqui 🤨"
+          );
+
+        }
+
+      }
+    );
+
+  }
+
+
+  /* ---------- ADICIONAR ---------- */
+
+  const addButton =
+    firstElement([
+      "addDataButton",
+      "openAddDataButton"
+    ]);
+
+
+  if (addButton) {
+
+    addButton.addEventListener(
+      "click",
+      openAddData
+    );
+
+  }
+
+
+  const encryptButton =
+    firstElement([
+      "encryptDataButton",
+      "confirmAddDataButton"
+    ]);
+
+
+  if (encryptButton) {
+
+    encryptButton.addEventListener(
+      "click",
+      async () => {
+
+        try {
+
+          await encryptNewData();
+
+        }
+        catch (error) {
+
+          console.error(
+            error
+          );
+
+          alert(
+            "Não foi possível criptografar o dado."
+          );
+
+        }
+
+      }
+    );
+
+  }
+
+
+  const cancelAddButton =
+    firstElement([
+      "cancelAddDataButton",
+      "closeAddDataButton"
+    ]);
+
+
+  if (cancelAddButton) {
+
+    cancelAddButton.addEventListener(
+      "click",
+      closeAddData
+    );
+
+  }
+
+
+  /* ---------- LIMPAR COFRE ---------- */
+
+  const clearVaultButton =
+    byId(
+      "clearVaultButton"
+    );
+
+
+  if (clearVaultButton) {
+
+    clearVaultButton.addEventListener(
+      "click",
+      openClearVault
+    );
+
+  }
+
+
+  const confirmClearVaultButton =
+    firstElement([
+      "confirmClearVaultButton",
+      "confirmClearVault"
+    ]);
+
+
+  if (confirmClearVaultButton) {
+
+    confirmClearVaultButton.addEventListener(
+      "click",
+      async () => {
+
+        try {
+
+          await clearVault();
+
+        }
+        catch (error) {
+
+          console.error(
+            error
+          );
+
+          alert(
+            "Não foi possível limpar o cofre."
+          );
+
+        }
+
+      }
+    );
+
+  }
+
+
+  const cancelClearVaultButton =
+    firstElement([
+      "cancelClearVaultButton",
+      "closeClearVaultButton"
+    ]);
+
+
+  if (cancelClearVaultButton) {
+
+    cancelClearVaultButton.addEventListener(
+      "click",
+      closeClearVault
+    );
+
+  }
+
+
+  /* ---------- TEMPORÁRIOS ---------- */
+
+  const clearTemporaryButton =
+    byId(
+      "clearTemporaryButton"
+    );
+
+
+  if (clearTemporaryButton) {
+
+    clearTemporaryButton.addEventListener(
+      "click",
+      clearTemporaryData
+    );
+
+  }
+
+
+  /* ---------- DESCRIPTOGRAFAR SALVO ---------- */
+
+  const decryptSavedButton =
+    byId(
+      "decryptSavedButton"
+    );
+
+
+  if (decryptSavedButton) {
+
+    decryptSavedButton.addEventListener(
+      "click",
+      openDecryptSaved
+    );
+
+  }
+
+
+  const confirmDecryptSavedButton =
+    byId(
+      "confirmDecryptSavedButton"
+    );
+
+
+  if (
+    confirmDecryptSavedButton
+  ) {
+
+    confirmDecryptSavedButton.addEventListener(
+      "click",
+      async () => {
+
+        try {
+
+          await decryptSavedData();
+
+        }
+        catch (error) {
+
+          console.error(
+            error
+          );
+
+          alert(
+            "Não foi possível descriptografar este arquivo."
+          );
+
+        }
+
+      }
+    );
+
+  }
+
+
+  const cancelDecryptSavedButton =
+    firstElement([
+      "cancelDecryptSavedButton",
+      "closeDecryptSavedButton"
+    ]);
+
+
+  if (
+    cancelDecryptSavedButton
+  ) {
+
+    cancelDecryptSavedButton.addEventListener(
+      "click",
+      closeDecryptSaved
+    );
+
+  }
+
+
+  /* ---------- LOGOUT ---------- */
+
+  const logoutButton =
+    byId(
+      "logoutButton"
+    );
+
+
+  if (logoutButton) {
+
+    logoutButton.addEventListener(
+      "click",
+      logout
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   INICIALIZAÇÃO
+========================================================= */
+
+async function initialize() {
+
+  setupEvents();
+
+
+  const existingConfig =
+    localStorage.getItem(
+      CONFIG_KEY
+    );
+
+
+  if (existingConfig) {
+
+    showLogin();
+
+  }
+  else {
+
+    showSetup();
+
+  }
+
+
+  /* ---------- SERVICE WORKER ---------- */
+
+  if (
+    "serviceWorker" in navigator
+  ) {
+
+    try {
+
+      const registration =
+        await navigator.serviceWorker.register(
+          "./sw.js"
+        );
+
+
+      if (
+        registration.waiting
       ) {
 
-        console.warn(
-          "Service Worker não registrado:",
-          error
+        registration.waiting.postMessage(
+          {
+            type:
+              "SKIP_WAITING"
+          }
         );
 
       }
 
+
+      navigator.serviceWorker.addEventListener(
+        "message",
+        (event) => {
+
+          if (
+            event.data &&
+            event.data.type ===
+              "ORIGON58_SW_UPDATED"
+          ) {
+
+            console.log(
+              "Origon58 Service Worker atualizado:",
+              event.data.version
+            );
+
+          }
+
+        }
+      );
+
     }
-  );
+    catch (error) {
 
-}
+      console.error(
+        "Erro no Service Worker:",
+        error
+      );
 
-
-/* ==================================================
-   INICIALIZAÇÃO
-================================================== */
-
-function initialize() {
-
-  const config =
-    loadConfig();
-
-
-  if (
-    config &&
-    config.verifiers
-  ) {
-
-    showScreen(
-      loginScreen
-    );
-
-  } else {
-
-    showScreen(
-      setupScreen
-    );
+    }
 
   }
 
 }
 
 
-initialize();
+document.addEventListener(
+  "DOMContentLoaded",
+  initialize
+);
