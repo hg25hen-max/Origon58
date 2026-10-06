@@ -1,120 +1,160 @@
 # Origon58
 
-Cofre pessoal criptografado executado diretamente no navegador.
+Cofre pessoal com criptografia local para proteger informações individuais.
 
-## Projeto #017
+## 🔐 Como funciona
 
-O Origon58 foi desenvolvido como um cofre pessoal local, sem banco de dados e sem serviços externos.
+O Origon58 utiliza três senhas para proteger o acesso ao cofre.
 
-## Tecnologias
+As senhas de acesso não são armazenadas em texto puro.
 
-- HTML
-- CSS
-- JavaScript
-- localStorage
+O sistema utiliza:
+
 - Web Crypto API
 - PBKDF2
 - SHA-256
 - AES-GCM
+- localStorage
 - Service Worker
-- Cache API
-- arquivos `.enc`
+- funcionamento offline
 
-## Características
+## 📦 Dados individuais
 
-- Três senhas para acesso ao cofre
-- Senhas de acesso não armazenadas em texto puro
-- Dados do cofre criptografados
-- Cada informação pode possuir sua própria senha
-- Cada informação pode ser salva individualmente como `.enc`
-- Backup geral criptografado
-- Senha exclusiva para cada backup
-- Restauração de backup
-- Bloqueio da sessão
-- Limpeza do cofre
-- Limpeza dos dados temporários
-- Funcionamento offline após o carregamento inicial
-- Compatibilidade com celular e computador
-- Sem banco de dados
-- Sem servidor próprio
-- Sem serviço pago
+Cada informação adicionada ao cofre é criptografada separadamente.
 
-## Segurança
+Ao adicionar um dado:
 
-O Origon58 utiliza a Web Crypto API do navegador.
+1. Escreva a informação.
+2. Crie uma senha para aquele dado.
+3. Confirme a senha.
+4. Clique em `CRIPTOGRAFAR`.
 
-As senhas de acesso são transformadas em verificadores usando PBKDF2 com SHA-256.
+Depois disso, o dado fica armazenado no cofre em formato criptografado.
 
-O conteúdo do cofre é protegido com AES-GCM.
+Cada dado possui seus próprios parâmetros criptográficos.
 
-Cada dado individual possui:
+## 🔓 Descriptografar
 
-- seu próprio salt
-- sua própria chave derivada
-- seu próprio IV
-- seu próprio ciphertext
+Cada dado possui seu próprio botão:
 
-A senha usada para criptografar um dado individual não é armazenada pelo aplicativo.
+`🔓 DESCRIPTOGRAFAR`
 
-A senha usada para um backup também não é armazenada.
+Esse botão serve somente para o dado correspondente.
 
-## Arquivos `.enc`
+A senha daquele dado é solicitada para revelar o conteúdo.
 
-Os arquivos `.enc` podem ser copiados manualmente para outro dispositivo.
+## 💾 Salvar .ENC
 
-O navegador não consegue verificar se uma cópia foi realmente feita para um pendrive. Essa etapa é feita pelo usuário.
+Cada dado também possui:
 
-## Backup geral
+`💾 SALVAR .ENC`
 
-O backup geral contém:
+Esse botão cria um arquivo `.enc` contendo somente aquele dado criptografado.
 
-- configuração necessária do cofre
-- verificadores das três senhas
-- cofre criptografado
-- informações necessárias para restauração
+Os arquivos podem ser copiados manualmente para um pendrive ou outro meio de armazenamento.
 
-O conteúdo do backup é novamente protegido por uma senha exclusiva do backup.
+O arquivo salvo não contém a senha do dado.
 
-## Armazenamento
+## 🗑️ Excluir
 
-O Origon58 utiliza localStorage para guardar os dados criptografados.
+Cada dado possui seu próprio botão:
 
-O localStorage não é, por si só, um armazenamento seguro.
+`🗑️ EXCLUIR`
 
-A proteção dos dados depende da criptografia utilizada pelo aplicativo.
+Ele remove somente aquele dado do cofre.
 
-## Offline
+## 🔓 Descriptografar dado salvo
 
-O Service Worker utiliza Cache API para manter os arquivos principais disponíveis depois que o aplicativo já foi carregado.
+O cofre possui o botão:
 
-## Limitações
+`🔓 DESCRIPTOGRAFAR DADO SALVO`
 
-O Origon58 é um projeto pessoal executado no navegador.
+Essa função é destinada a arquivos `.enc` individuais que estejam fora do cofre.
 
-Ele não deve ser considerado equivalente a um gerenciador profissional de senhas.
+Exemplo:
 
-Um dispositivo ou navegador completamente controlado por outra pessoa pode comprometer qualquer aplicação executada localmente.
+1. Salvar um dado usando `SALVAR .ENC`.
+2. Copiar o arquivo para um pendrive.
+3. Conectar o pendrive em outro computador.
+4. Copiar o arquivo para o dispositivo.
+5. Abrir o Origon58.
+6. Entrar no cofre.
+7. Clicar em `DESCRIPTOGRAFAR DADO SALVO`.
+8. Selecionar o arquivo `.enc`.
+9. Informar a senha daquele dado.
+10. Descriptografar.
 
-## Uso recomendado
+O conteúdo é mostrado na tela.
 
-Antes de armazenar informações reais:
+O arquivo externo não é automaticamente adicionado ao cofre.
 
-1. Criar as três senhas de acesso.
-2. Testar o login.
-3. Criar dados falsos.
-4. Criptografar os dados.
-5. Descriptografar os dados.
-6. Criar um backup.
-7. Salvar o backup `.enc`.
-8. Copiar o backup para um pendrive.
-9. Restaurar o backup em outro dispositivo.
-10. Testar novamente.
-11. Testar o modo offline.
-12. Limpar o cofre.
-13. Confirmar que os dados foram apagados.
-14. Somente depois utilizar informações reais.
+## 🧹 Limpar temporários
 
-## Projeto pessoal
+O botão:
 
-Origon58
-Projeto #017
+`🧹 LIMPAR TEMPORÁRIOS`
+
+remove informações temporárias utilizadas durante operações externas.
+
+Ele não deve apagar os dados armazenados no cofre.
+
+## 🗑️ Limpar cofre
+
+O botão:
+
+`🗑️ LIMPAR COFRE`
+
+permite apagar os dados armazenados no cofre.
+
+A operação possui confirmações antes da exclusão.
+
+## 🔒 Voltar para a senha
+
+O botão:
+
+`🔒 VOLTAR PARA A SENHA`
+
+sai do cofre e retorna para a tela de acesso.
+
+Os dados armazenados não são apagados.
+
+## 🌐 Funcionamento offline
+
+O Origon58 possui um Service Worker.
+
+Depois que os arquivos necessários forem armazenados no cache do navegador, o site pode continuar funcionando sem internet.
+
+## 💾 Armazenamento
+
+Os dados do cofre ficam no armazenamento local do navegador.
+
+Não existe banco de dados externo.
+
+Não existe servidor próprio para armazenar os dados.
+
+Não existe sincronização automática entre dispositivos.
+
+## ⚠️ Importante
+
+O Origon58 é um projeto pessoal baseado em tecnologias executadas no próprio navegador.
+
+A criptografia protege os dados armazenados, mas isso não significa proteção absoluta contra um dispositivo ou navegador completamente comprometido.
+
+As senhas dos dados individuais não são armazenadas pelo sistema.
+
+Se a senha de um dado individual for perdida, o conteúdo daquele dado não poderá ser descriptografado pelo Origon58.
+
+Os arquivos `.enc` devem ser guardados com cuidado.
+
+O GitHub contém apenas os arquivos do projeto e não deve conter informações pessoais reais.
+
+## 📁 Estrutura
+
+```text
+Origon58/
+├── index.html
+├── style.css
+├── script.js
+├── sw.js
+├── manifest.json
+└── README.md
