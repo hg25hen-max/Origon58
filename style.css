@@ -54,11 +54,6 @@ button:active {
   min-height: 100vh;
 }
 
-
-/* ==================================================
-   AUTENTICAÇÃO
-================================================== */
-
 #setupScreen,
 #loginScreen {
   display: flex;
@@ -105,11 +100,6 @@ button:active {
   line-height: 1.55;
 }
 
-
-/* ==================================================
-   TEXTOS
-================================================== */
-
 .eyebrow {
   display: block;
   color: #777777;
@@ -134,11 +124,6 @@ button:active {
   color: var(--muted);
   line-height: 1.55;
 }
-
-
-/* ==================================================
-   CAMPOS
-================================================== */
 
 input[type="password"],
 input[type="file"],
@@ -173,11 +158,6 @@ input[type="file"]:focus,
 textarea:focus {
   border-color: #777777;
 }
-
-
-/* ==================================================
-   BOTÕES — PADRÃO GERAL
-================================================== */
 
 .primary-button,
 .secondary-button,
@@ -218,11 +198,6 @@ textarea:focus {
   text-align: center;
 }
 
-
-/* ==================================================
-   TOPO
-================================================== */
-
 .topbar {
   width: 100%;
   min-height: 86px;
@@ -249,11 +224,6 @@ textarea:focus {
   border: 1px solid #333333;
   font-size: 18px;
 }
-
-
-/* ==================================================
-   CONTEÚDO
-================================================== */
 
 .content {
   width: 100%;
@@ -314,11 +284,6 @@ textarea:focus {
   font-size: 14px;
 }
 
-
-/* ==================================================
-   DADOS
-================================================== */
-
 .counter {
   min-width: 32px;
   padding: 5px 9px;
@@ -378,17 +343,9 @@ textarea:focus {
   line-height: 1.4;
 }
 
-
-/* ==================================================
-   AÇÕES DOS DADOS
-================================================== */
-
 .data-actions {
   display: grid;
-  grid-template-columns:
-    1fr
-    1fr
-    1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 8px;
   width: 100%;
 }
@@ -406,10 +363,25 @@ textarea:focus {
   white-space: nowrap;
 }
 
+.saved-data-result {
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 11px;
+  background: #0c0c0c;
+  border: 1px solid #303030;
+}
 
-/* ==================================================
-   MODAIS
-================================================== */
+.result-text {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 9px;
+  background: #080808;
+  border: 1px solid #292929;
+  color: #ffffff;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.5;
+}
 
 .modal {
   position: fixed;
@@ -460,24 +432,15 @@ textarea:focus {
   margin-top: 0;
 }
 
-
-/* ==================================================
-   CONTROLES DO COFRE
-================================================== */
-
 #clearVaultButton,
 #clearTemporaryButton,
+#decryptSavedButton,
 #logoutButton {
   width: 100%;
   min-height: 47px;
   height: 47px;
   margin-top: 10px;
 }
-
-
-/* ==================================================
-   NOTEBOOK
-================================================== */
 
 @media (min-width: 800px) {
 
@@ -494,11 +457,6 @@ textarea:focus {
   }
 
 }
-
-
-/* ==================================================
-   CELULAR
-================================================== */
 
 @media (max-width: 600px) {
 
@@ -552,11 +510,6 @@ textarea:focus {
 
 }
 
-
-/* ==================================================
-   TELAS MUITO PEQUENAS
-================================================== */
-
 @media (max-width: 360px) {
 
   .auth-box {
@@ -575,4 +528,4 @@ textarea:focus {
     padding: 13px;
   }
 
-}
+  }
