@@ -2,7 +2,7 @@
 
 
 const CACHE_NAME =
-  "origon58-cache-v1";
+  "origon58-cache-v2";
 
 
 const APP_SHELL = [
