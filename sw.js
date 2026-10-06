@@ -1,156 +1,100 @@
-"use strict";
+const CACHE_NAME = "origon58-cache-v9";
 
-/*
-  ORIGON58
-  Service Worker V8
-*/
-
-const CACHE_NAME = "origon58-cache-v8";
-
-const APP_SHELL = [
+const APP_FILES = [
   "./",
   "./index.html",
   "./style.css",
   "./script.js",
-  "./manifest.json",
-  "./sw.js"
+  "./manifest.json"
 ];
 
 
 /* =========================================================
    INSTALAÇÃO
-========================================================= */
+   ========================================================= */
 
-self.addEventListener("install", (event) => {
+self.addEventListener("install", event => {
 
   event.waitUntil(
 
-    caches
-      .open(CACHE_NAME)
+    caches.open(CACHE_NAME)
+      .then(cache => {
 
-      .then((cache) => {
-
-        return cache.addAll(APP_SHELL);
-
-      })
-
-      .then(() => {
-
-        return self.skipWaiting();
+        return cache.addAll(APP_FILES);
 
       })
 
   );
 
+  self.skipWaiting();
 });
 
 
 /* =========================================================
    ATIVAÇÃO
-========================================================= */
+   ========================================================= */
 
-self.addEventListener("activate", (event) => {
+self.addEventListener("activate", event => {
 
   event.waitUntil(
 
-    caches
-      .keys()
-
-      .then((cacheNames) => {
+    caches.keys()
+      .then(cacheNames => {
 
         return Promise.all(
 
           cacheNames
-
-            .filter((name) => {
-
-              return name !== CACHE_NAME;
-
-            })
-
-            .map((name) => {
-
-              return caches.delete(name);
-
-            })
+            .filter(
+              cacheName =>
+                cacheName.startsWith("origon58-cache-") &&
+                cacheName !== CACHE_NAME
+            )
+            .map(
+              cacheName =>
+                caches.delete(cacheName)
+            )
 
         );
 
       })
-
-      .then(() => {
-
-        return self.clients.claim();
-
-      })
-
-      .then(() => {
-
-        return self.clients.matchAll();
-
-      })
-
-      .then((clients) => {
-
-        clients.forEach((client) => {
-
-          client.postMessage({
-
-            type:
-              "ORIGON58_SW_UPDATED",
-
-            version:
-              CACHE_NAME
-
-          });
-
-        });
-
-      })
+      .then(() => self.clients.claim())
 
   );
-
 });
 
 
 /* =========================================================
-   REQUISIÇÕES
-========================================================= */
+   BUSCA DE ARQUIVOS
+   ========================================================= */
 
-self.addEventListener("fetch", (event) => {
+self.addEventListener("fetch", event => {
 
-  if (
-    event.request.method !== "GET"
-  ) {
-
+  if (event.request.method !== "GET") {
     return;
-
   }
 
 
   event.respondWith(
 
     fetch(event.request)
-
-      .then((response) => {
+      .then(response => {
 
         if (
           response &&
-          response.status === 200
+          response.status === 200 &&
+          response.type === "basic"
         ) {
 
-          const copy =
+          const responseClone =
             response.clone();
 
 
-          caches
-            .open(CACHE_NAME)
-
-            .then((cache) => {
+          caches.open(CACHE_NAME)
+            .then(cache => {
 
               cache.put(
                 event.request,
-                copy
+                responseClone
               );
 
             });
@@ -161,52 +105,10 @@ self.addEventListener("fetch", (event) => {
         return response;
 
       })
+      .catch(() => {
 
-      .catch(async () => {
-
-        const cached =
-          await caches.match(
-            event.request
-          );
-
-
-        if (cached) {
-
-          return cached;
-
-        }
-
-
-        if (
-          event.request.mode ===
-          "navigate"
-        ) {
-
-          const fallback =
-            await caches.match(
-              "./index.html"
-            );
-
-
-          if (fallback) {
-
-            return fallback;
-
-          }
-
-        }
-
-
-        return new Response(
-          "Origon58 offline.",
-          {
-            status: 503,
-
-            headers: {
-              "Content-Type":
-                "text/plain; charset=utf-8"
-            }
-          }
+        return caches.match(
+          event.request
         );
 
       })
@@ -218,14 +120,18 @@ self.addEventListener("fetch", (event) => {
 
 /* =========================================================
    MENSAGENS
-========================================================= */
+   ========================================================= */
 
-self.addEventListener("message", (event) => {
+self.addEventListener("message", event => {
+
+  if (!event.data) {
+    return;
+  }
+
 
   if (
-    event.data &&
     event.data.type ===
-      "SKIP_WAITING"
+    "SKIP_WAITING"
   ) {
 
     self.skipWaiting();
