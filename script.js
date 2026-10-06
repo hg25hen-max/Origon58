@@ -9,7 +9,7 @@
 
 /* =========================================================
    CONFIGURAÇÕES
-   ========================================================= */
+========================================================= */
 
 const CONFIG_KEY =
   "origon58_config_v3";
@@ -18,6 +18,9 @@ const VAULT_KEY =
   "origon58_vault_v3";
 
 const CONFIG_VERSION =
+  3;
+
+const VAULT_VERSION =
   3;
 
 const ITEM_VERSION =
@@ -31,8 +34,8 @@ const PBKDF2_ITERATIONS =
 
 
 /* =========================================================
-   ESTADO TEMPORÁRIO
-   ========================================================= */
+   ESTADO
+========================================================= */
 
 let sessionKey = null;
 
@@ -40,12 +43,13 @@ let vaultData = null;
 
 let temporaryBackup = null;
 
-let temporaryItemPackages = new Map();
+let temporaryItemPackages =
+  new Map();
 
 
 /* =========================================================
    ELEMENTOS
-   ========================================================= */
+========================================================= */
 
 const setupScreen =
   document.getElementById(
@@ -136,7 +140,7 @@ const decryptButton =
 
 /* =========================================================
    MODAL — ADICIONAR DADO
-   ========================================================= */
+========================================================= */
 
 const addDataModal =
   document.getElementById(
@@ -176,7 +180,7 @@ const addDataMessage =
 
 /* =========================================================
    MODAL — LIMPAR COFRE
-   ========================================================= */
+========================================================= */
 
 const clearVaultModal =
   document.getElementById(
@@ -211,7 +215,7 @@ const clearVaultMessage =
 
 /* =========================================================
    MODAL — BACKUP
-   ========================================================= */
+========================================================= */
 
 const backupModal =
   document.getElementById(
@@ -251,7 +255,7 @@ const backupMessage =
 
 /* =========================================================
    MODAL — RESTAURAR BACKUP
-   ========================================================= */
+========================================================= */
 
 const decryptModal =
   document.getElementById(
@@ -286,9 +290,11 @@ const decryptMessage =
 
 /* =========================================================
    UTILITÁRIOS
-   ========================================================= */
+========================================================= */
 
-function randomBytes(length) {
+function randomBytes(
+  length
+) {
 
   const bytes =
     new Uint8Array(
@@ -304,12 +310,15 @@ function randomBytes(length) {
 }
 
 
-function bytesToBase64(bytes) {
+function bytesToBase64(
+  bytes
+) {
 
   let binary = "";
 
   const chunkSize =
     0x8000;
+
 
   for (
     let i = 0;
@@ -326,11 +335,14 @@ function bytesToBase64(bytes) {
         )
       );
 
-    binary += String.fromCharCode(
-      ...chunk
-    );
+
+    binary +=
+      String.fromCharCode(
+        ...chunk
+      );
 
   }
+
 
   return btoa(
     binary
@@ -339,10 +351,12 @@ function bytesToBase64(bytes) {
 }
 
 
-function base64ToBytes(base64) {
+function base64ToBytes(
+  value
+) {
 
   if (
-    typeof base64 !==
+    typeof value !==
     "string"
   ) {
 
@@ -354,15 +368,14 @@ function base64ToBytes(base64) {
 
 
   const clean =
-    base64
-      .replace(
-       (/\s/g),
-        ""
-      );
+    value.replace(
+      /\s/g,
+      ""
+    );
 
 
   if (
-    clean.length === 0
+    !clean
   ) {
 
     throw new Error(
@@ -372,10 +385,23 @@ function base64ToBytes(base64) {
   }
 
 
-  const binary =
-    atob(
-      clean
+  let binary;
+
+
+  try {
+
+    binary =
+      atob(
+        clean
+      );
+
+  } catch {
+
+    throw new Error(
+      "Base64 corrompido."
     );
+
+  }
 
 
   const bytes =
@@ -397,20 +423,8 @@ function base64ToBytes(base64) {
 
   }
 
+
   return bytes;
-
-}
-
-
-function uint8ToArrayBuffer(
-  bytes
-) {
-
-  return bytes.buffer.slice(
-    bytes.byteOffset,
-    bytes.byteOffset +
-      bytes.byteLength
-  );
 
 }
 
@@ -430,6 +444,7 @@ function showScreen(
   vaultScreen.classList.add(
     "hidden"
   );
+
 
   screen.classList.remove(
     "hidden"
@@ -470,38 +485,21 @@ function clearMessage(
 }
 
 
-function safeString(
-  value
-) {
-
-  if (
-    typeof value !==
-    "string"
-  ) {
-
-    return "";
-
-  }
-
-  return value;
-
-}
-
-
 /* =========================================================
    CRIPTOGRAFIA
-   ========================================================= */
+========================================================= */
 
 async function deriveAESKey(
   password,
   salt,
-  iterations = PBKDF2_ITERATIONS
+  iterations =
+    PBKDF2_ITERATIONS
 ) {
 
   if (
     typeof password !==
-    "string" ||
-    password.length === 0
+      "string" ||
+    !password
   ) {
 
     throw new Error(
@@ -522,7 +520,8 @@ async function deriveAESKey(
       "raw",
       passwordBytes,
       {
-        name: "PBKDF2"
+        name:
+          "PBKDF2"
       },
       false,
       [
@@ -533,21 +532,38 @@ async function deriveAESKey(
 
   return crypto.subtle.deriveKey(
     {
-      name: "PBKDF2",
-      salt: salt,
-      iterations: iterations,
-      hash: "SHA-256"
+      name:
+        "PBKDF2",
+
+      salt:
+        salt,
+
+      iterations:
+        iterations,
+
+      hash:
+        "SHA-256"
+
     },
+
     keyMaterial,
+
     {
-      name: "AES-GCM",
-      length: 256
+      name:
+        "AES-GCM",
+
+      length:
+        256
+
     },
+
     false,
+
     [
       "encrypt",
       "decrypt"
     ]
+
   );
 
 }
@@ -564,7 +580,7 @@ async function encryptText(
     );
 
 
-  const plaintext =
+  const data =
     new TextEncoder().encode(
       text
     );
@@ -573,11 +589,17 @@ async function encryptText(
   const encrypted =
     await crypto.subtle.encrypt(
       {
-        name: "AES-GCM",
-        iv: iv
+        name:
+          "AES-GCM",
+
+        iv:
+          iv
+
       },
+
       key,
-      plaintext
+
+      data
     );
 
 
@@ -606,15 +628,35 @@ async function decryptText(
 ) {
 
   if (
-    !packageData ||
+    !packageData
+  ) {
+
+    throw new Error(
+      "Pacote criptográfico ausente."
+    );
+
+  }
+
+
+  if (
     typeof packageData.iv !==
-      "string" ||
+      "string"
+  ) {
+
+    throw new Error(
+      "IV ausente."
+    );
+
+  }
+
+
+  if (
     typeof packageData.ciphertext !==
       "string"
   ) {
 
     throw new Error(
-      "Pacote criptográfico inválido."
+      "Ciphertext ausente."
     );
 
   }
@@ -633,7 +675,8 @@ async function decryptText(
 
 
   if (
-    iv.length !== 12
+    iv.length !==
+    12
   ) {
 
     throw new Error(
@@ -643,15 +686,46 @@ async function decryptText(
   }
 
 
-  const decrypted =
-    await crypto.subtle.decrypt(
-      {
-        name: "AES-GCM",
-        iv: iv
-      },
-      key,
-      ciphertext
+  if (
+    ciphertext.length <
+    16
+  ) {
+
+    throw new Error(
+      "Ciphertext inválido ou incompleto."
     );
+
+  }
+
+
+  let decrypted;
+
+
+  try {
+
+    decrypted =
+      await crypto.subtle.decrypt(
+        {
+          name:
+            "AES-GCM",
+
+          iv:
+            iv
+
+        },
+
+        key,
+
+        ciphertext
+      );
+
+  } catch {
+
+    throw new Error(
+      "A senha do backup está incorreta ou o arquivo foi alterado."
+    );
+
+  }
 
 
   return new TextDecoder()
@@ -663,13 +737,13 @@ async function decryptText(
 
 
 async function encryptJSON(
-  value,
+  data,
   key
 ) {
 
   return encryptText(
     JSON.stringify(
-      value
+      data
     ),
     key
   );
@@ -678,47 +752,37 @@ async function encryptJSON(
 
 
 async function decryptJSON(
-  packageData,
+  data,
   key
 ) {
 
   const text =
     await decryptText(
-      packageData,
+      data,
       key
     );
 
 
-  return JSON.parse(
-    text
-  );
+  try {
+
+    return JSON.parse(
+      text
+    );
+
+  } catch {
+
+    throw new Error(
+      "Conteúdo descriptografado não é JSON válido."
+    );
+
+  }
 
 }
 
 
 /* =========================================================
-   CONFIGURAÇÃO DO COFRE
-   ========================================================= */
-
-function createConfigPackage(
-  passwordHashes
-) {
-
-  return {
-
-    format:
-      "Origon58 Config",
-
-    version:
-      CONFIG_VERSION,
-
-    passwordVerifiers:
-      passwordHashes
-
-  };
-
-}
-
+   CONFIGURAÇÃO
+========================================================= */
 
 function getConfig() {
 
@@ -728,7 +792,9 @@ function getConfig() {
     );
 
 
-  if (!raw) {
+  if (
+    !raw
+  ) {
 
     return null;
 
@@ -765,8 +831,8 @@ function saveConfig(
 
 
 /* =========================================================
-   VERIFICADOR DE SENHAS
-   ========================================================= */
+   VERIFICADORES DE SENHA
+========================================================= */
 
 async function createPasswordVerifier(
   password
@@ -785,7 +851,7 @@ async function createPasswordVerifier(
     );
 
 
-  const testPackage =
+  const test =
     await encryptText(
       "origon58-password-test",
       key
@@ -800,10 +866,10 @@ async function createPasswordVerifier(
       ),
 
     iv:
-      testPackage.iv,
+      test.iv,
 
     ciphertext:
-      testPackage.ciphertext,
+      test.ciphertext,
 
     iterations:
       PBKDF2_ITERATIONS
@@ -834,7 +900,7 @@ async function verifyPassword(
       );
 
 
-    const text =
+    const result =
       await decryptText(
         {
           iv:
@@ -844,12 +910,13 @@ async function verifyPassword(
             verifier.ciphertext
 
         },
+
         key
       );
 
 
     return (
-      text ===
+      result ===
       "origon58-password-test"
     );
 
@@ -864,7 +931,7 @@ async function verifyPassword(
 
 /* =========================================================
    COFRE
-   ========================================================= */
+========================================================= */
 
 function createEmptyVault() {
 
@@ -874,7 +941,7 @@ function createEmptyVault() {
       "Origon58 Vault",
 
     version:
-      3,
+      VAULT_VERSION,
 
     items:
       []
@@ -892,7 +959,9 @@ function getVaultPackage() {
     );
 
 
-  if (!raw) {
+  if (
+    !raw
+  ) {
 
     return null;
 
@@ -918,7 +987,9 @@ async function saveVaultPackage(
   vaultPackage
 ) {
 
-  if (!sessionKey) {
+  if (
+    !sessionKey
+  ) {
 
     throw new Error(
       "Cofre bloqueado."
@@ -934,13 +1005,13 @@ async function saveVaultPackage(
     );
 
 
-  const packageToSave = {
+  const packageData = {
 
     format:
       "Origon58 Encrypted Vault",
 
     version:
-      3,
+      VAULT_VERSION,
 
     cipher:
       encrypted
@@ -951,7 +1022,7 @@ async function saveVaultPackage(
   localStorage.setItem(
     VAULT_KEY,
     JSON.stringify(
-      packageToSave
+      packageData
     )
   );
 
@@ -964,14 +1035,18 @@ async function loadVault() {
     getVaultPackage();
 
 
-  if (!packageData) {
+  if (
+    !packageData
+  ) {
 
     vaultData =
       createEmptyVault();
 
+
     await saveVaultPackage(
       vaultData
     );
+
 
     return;
 
@@ -980,11 +1055,22 @@ async function loadVault() {
 
   if (
     packageData.format !==
-    "Origon58 Encrypted Vault"
+      "Origon58 Encrypted Vault"
   ) {
 
     throw new Error(
       "Formato do cofre inválido."
+    );
+
+  }
+
+
+  if (
+    !packageData.cipher
+  ) {
+
+    throw new Error(
+      "Pacote do cofre sem criptografia."
     );
 
   }
@@ -1016,57 +1102,60 @@ async function loadVault() {
 
 
 /* =========================================================
-   CRIAÇÃO DO ACESSO
-   ========================================================= */
+   CRIAR ACESSO
+========================================================= */
 
 setupForm.addEventListener(
   "submit",
-  async (event) => {
+  async (
+    event
+  ) => {
 
     event.preventDefault();
+
 
     clearMessage(
       setupMessage
     );
 
 
-    const password1 =
+    const p1 =
       document.getElementById(
         "setupPassword1"
       ).value;
 
-    const password1Confirm =
+    const p1c =
       document.getElementById(
         "setupPassword1Confirm"
       ).value;
 
 
-    const password2 =
+    const p2 =
       document.getElementById(
         "setupPassword2"
       ).value;
 
-    const password2Confirm =
+    const p2c =
       document.getElementById(
         "setupPassword2Confirm"
       ).value;
 
 
-    const password3 =
+    const p3 =
       document.getElementById(
         "setupPassword3"
       ).value;
 
-    const password3Confirm =
+    const p3c =
       document.getElementById(
         "setupPassword3Confirm"
       ).value;
 
 
     if (
-      !password1 ||
-      !password2 ||
-      !password3
+      !p1 ||
+      !p2 ||
+      !p3
     ) {
 
       setupMessage.textContent =
@@ -1078,8 +1167,7 @@ setupForm.addEventListener(
 
 
     if (
-      password1 !==
-      password1Confirm
+      p1 !== p1c
     ) {
 
       setupMessage.textContent =
@@ -1091,8 +1179,7 @@ setupForm.addEventListener(
 
 
     if (
-      password2 !==
-      password2Confirm
+      p2 !== p2c
     ) {
 
       setupMessage.textContent =
@@ -1104,26 +1191,11 @@ setupForm.addEventListener(
 
 
     if (
-      password3 !==
-      password3Confirm
+      p3 !== p3c
     ) {
 
       setupMessage.textContent =
         "A terceira senha não confere.";
-
-      return;
-
-    }
-
-
-    if (
-      password1.length < 4 ||
-      password2.length < 4 ||
-      password3.length < 4
-    ) {
-
-      setupMessage.textContent =
-        "Use senhas com pelo menos 4 caracteres.";
 
       return;
 
@@ -1136,24 +1208,32 @@ setupForm.addEventListener(
         await Promise.all([
 
           createPasswordVerifier(
-            password1
+            p1
           ),
 
           createPasswordVerifier(
-            password2
+            p2
           ),
 
           createPasswordVerifier(
-            password3
+            p3
           )
 
         ]);
 
 
-      const config =
-        createConfigPackage(
+      const config = {
+
+        format:
+          "Origon58 Config",
+
+        version:
+          CONFIG_VERSION,
+
+        passwordVerifiers:
           verifiers
-        );
+
+      };
 
 
       saveConfig(
@@ -1162,11 +1242,11 @@ setupForm.addEventListener(
 
 
       const accessMaterial =
-        password1 +
+        p1 +
         "\u0000" +
-        password2 +
+        p2 +
         "\u0000" +
-        password3;
+        p3;
 
 
       const accessSalt =
@@ -1193,6 +1273,7 @@ setupForm.addEventListener(
 
       setupForm.reset();
 
+
       showScreen(
         loginScreen
       );
@@ -1209,6 +1290,7 @@ setupForm.addEventListener(
         error
       );
 
+
       setupMessage.textContent =
         "Não foi possível criar o acesso.";
 
@@ -1220,30 +1302,33 @@ setupForm.addEventListener(
 
 /* =========================================================
    LOGIN
-   ========================================================= */
+========================================================= */
 
 loginForm.addEventListener(
   "submit",
-  async (event) => {
+  async (
+    event
+  ) => {
 
     event.preventDefault();
+
 
     clearMessage(
       loginMessage
     );
 
 
-    const password1 =
+    const p1 =
       document.getElementById(
         "loginPassword1"
       ).value;
 
-    const password2 =
+    const p2 =
       document.getElementById(
         "loginPassword2"
       ).value;
 
-    const password3 =
+    const p3 =
       document.getElementById(
         "loginPassword3"
       ).value;
@@ -1254,7 +1339,19 @@ loginForm.addEventListener(
 
 
     if (
-      !config ||
+      !config
+    ) {
+
+      showScreen(
+        setupScreen
+      );
+
+      return;
+
+    }
+
+
+    if (
       !Array.isArray(
         config.passwordVerifiers
       ) ||
@@ -1275,21 +1372,21 @@ loginForm.addEventListener(
 
       const valid1 =
         await verifyPassword(
-          password1,
+          p1,
           config.passwordVerifiers[0]
         );
 
 
       const valid2 =
         await verifyPassword(
-          password2,
+          p2,
           config.passwordVerifiers[1]
         );
 
 
       const valid3 =
         await verifyPassword(
-          password3,
+          p3,
           config.passwordVerifiers[2]
         );
 
@@ -1309,11 +1406,11 @@ loginForm.addEventListener(
 
 
       const accessMaterial =
-        password1 +
+        p1 +
         "\u0000" +
-        password2 +
+        p2 +
         "\u0000" +
-        password3;
+        p3;
 
 
       const accessSalt =
@@ -1334,9 +1431,11 @@ loginForm.addEventListener(
 
       loginForm.reset();
 
+
       showScreen(
         vaultScreen
       );
+
 
       renderVault();
 
@@ -1348,11 +1447,13 @@ loginForm.addEventListener(
         error
       );
 
+
       sessionKey =
         null;
 
       vaultData =
         null;
+
 
       loginMessage.textContent =
         "por que quer entrar aqui 🤨";
@@ -1364,8 +1465,8 @@ loginForm.addEventListener(
 
 
 /* =========================================================
-   RENDERIZAÇÃO
-   ========================================================= */
+   RENDERIZAR COFRE
+========================================================= */
 
 function renderVault() {
 
@@ -1396,7 +1497,7 @@ function renderVault() {
 
   if (
     vaultData.items.length ===
-    0
+      0
   ) {
 
     const empty =
@@ -1404,15 +1505,19 @@ function renderVault() {
         "p"
       );
 
+
     empty.className =
       "panel-description";
+
 
     empty.textContent =
       "Nenhum dado protegido ainda.";
 
+
     dataList.appendChild(
       empty
     );
+
 
     return;
 
@@ -1420,12 +1525,15 @@ function renderVault() {
 
 
   vaultData.items.forEach(
-    (item) => {
+    (
+      item
+    ) => {
 
       const card =
         document.createElement(
           "article"
         );
+
 
       card.className =
         "data-card";
@@ -1436,20 +1544,23 @@ function renderVault() {
           "h3"
         );
 
+
       title.textContent =
         item.title ||
         "Dado protegido";
 
 
-      const text =
+      const ciphertext =
         document.createElement(
           "pre"
         );
 
-      text.className =
+
+      ciphertext.className =
         "ciphertext";
 
-      text.textContent =
+
+      ciphertext.textContent =
         item.ciphertext ||
         "";
 
@@ -1459,26 +1570,28 @@ function renderVault() {
           "div"
         );
 
+
       actions.className =
         "data-actions";
 
 
-      const decryptButtonItem =
+      const decryptItemButton =
         document.createElement(
           "button"
         );
 
-      decryptButtonItem.type =
+
+      decryptItemButton.type =
         "button";
 
-      decryptButtonItem.className =
+      decryptItemButton.className =
         "secondary-button";
 
-      decryptButtonItem.textContent =
+      decryptItemButton.textContent =
         "🔓 DESCRIPTOGRAFAR";
 
 
-      decryptButtonItem.addEventListener(
+      decryptItemButton.addEventListener(
         "click",
         () => {
 
@@ -1490,22 +1603,23 @@ function renderVault() {
       );
 
 
-      const saveButton =
+      const saveItemButton =
         document.createElement(
           "button"
         );
 
-      saveButton.type =
+
+      saveItemButton.type =
         "button";
 
-      saveButton.className =
+      saveItemButton.className =
         "secondary-button";
 
-      saveButton.textContent =
+      saveItemButton.textContent =
         "💾 SALVAR .ENC";
 
 
-      saveButton.addEventListener(
+      saveItemButton.addEventListener(
         "click",
         () => {
 
@@ -1517,32 +1631,31 @@ function renderVault() {
       );
 
 
-      const deleteButton =
+      const deleteItemButton =
         document.createElement(
           "button"
         );
 
-      deleteButton.type =
+
+      deleteItemButton.type =
         "button";
 
-      deleteButton.className =
+      deleteItemButton.className =
         "danger-button";
 
-      deleteButton.textContent =
+      deleteItemButton.textContent =
         "🗑️ EXCLUIR";
 
 
-      deleteButton.addEventListener(
+      deleteItemButton.addEventListener(
         "click",
         async () => {
 
-          const confirmed =
-            confirm(
+          if (
+            !confirm(
               "Excluir este dado?"
-            );
-
-
-          if (!confirmed) {
+            )
+          ) {
 
             return;
 
@@ -1551,7 +1664,9 @@ function renderVault() {
 
           vaultData.items =
             vaultData.items.filter(
-              (entry) =>
+              (
+                entry
+              ) =>
                 entry.id !==
                 item.id
             );
@@ -1569,15 +1684,15 @@ function renderVault() {
 
 
       actions.appendChild(
-        decryptButtonItem
+        decryptItemButton
       );
 
       actions.appendChild(
-        saveButton
+        saveItemButton
       );
 
       actions.appendChild(
-        deleteButton
+        deleteItemButton
       );
 
 
@@ -1586,7 +1701,7 @@ function renderVault() {
       );
 
       card.appendChild(
-        text
+        ciphertext
       );
 
       card.appendChild(
@@ -1606,7 +1721,7 @@ function renderVault() {
 
 /* =========================================================
    ADICIONAR DADO
-   ========================================================= */
+========================================================= */
 
 addDataButton.addEventListener(
   "click",
@@ -1625,9 +1740,11 @@ addDataButton.addEventListener(
       addDataMessage
     );
 
+
     openModal(
       addDataModal
     );
+
 
     newDataText.focus();
 
@@ -1678,7 +1795,9 @@ encryptDataButton.addEventListener(
     }
 
 
-    if (!password) {
+    if (
+      !password
+    ) {
 
       addDataMessage.textContent =
         "Crie uma senha para este dado.";
@@ -1836,6 +1955,7 @@ encryptDataButton.addEventListener(
         error
       );
 
+
       addDataMessage.textContent =
         "Não foi possível criptografar este dado.";
 
@@ -1846,8 +1966,8 @@ encryptDataButton.addEventListener(
 
 
 /* =========================================================
-   DESCRIPTOGRAFAR DADO INDIVIDUAL
-   ========================================================= */
+   DESCRIPTOGRAFAR ITEM
+========================================================= */
 
 async function decryptIndividualItem(
   item
@@ -1899,6 +2019,7 @@ async function decryptIndividualItem(
             packageData.ciphertext
 
         },
+
         key
       );
 
@@ -1927,6 +2048,7 @@ async function decryptIndividualItem(
       error
     );
 
+
     alert(
       "Senha incorreta ou dado inválido."
     );
@@ -1937,8 +2059,8 @@ async function decryptIndividualItem(
 
 
 /* =========================================================
-   SALVAR ITEM INDIVIDUAL
-   ========================================================= */
+   SALVAR ITEM
+========================================================= */
 
 async function saveIndividualItem(
   item
@@ -2094,7 +2216,7 @@ async function saveIndividualItem(
 
 /* =========================================================
    LIMPAR COFRE
-   ========================================================= */
+========================================================= */
 
 clearVaultButton.addEventListener(
   "click",
@@ -2106,9 +2228,11 @@ clearVaultButton.addEventListener(
     clearVaultPasswordConfirm.value =
       "";
 
+
     clearMessage(
       clearVaultMessage
     );
+
 
     openModal(
       clearVaultModal
@@ -2146,7 +2270,9 @@ confirmClearVaultButton.addEventListener(
       clearVaultPasswordConfirm.value;
 
 
-    if (!password) {
+    if (
+      !password
+    ) {
 
       clearVaultMessage.textContent =
         "Crie uma senha para autorizar a limpeza.";
@@ -2169,13 +2295,11 @@ confirmClearVaultButton.addEventListener(
     }
 
 
-    const confirmed =
-      confirm(
+    if (
+      !confirm(
         "ATENÇÃO: todos os dados do cofre serão apagados. Continuar?"
-      );
-
-
-    if (!confirmed) {
+      )
+    ) {
 
       return;
 
@@ -2209,7 +2333,7 @@ confirmClearVaultButton.addEventListener(
 
 /* =========================================================
    LIMPAR TEMPORÁRIOS
-   ========================================================= */
+========================================================= */
 
 clearTemporaryButton.addEventListener(
   "click",
@@ -2217,6 +2341,7 @@ clearTemporaryButton.addEventListener(
 
     temporaryBackup =
       null;
+
 
     temporaryItemPackages.clear();
 
@@ -2248,26 +2373,18 @@ clearTemporaryButton.addEventListener(
 
 
 /* =========================================================
-   VOLTAR PARA A SENHA
-   ========================================================= */
+   SAIR
+========================================================= */
 
 lockButton.addEventListener(
   "click",
-  () => {
-
-    logoutToLogin();
-
-  }
+  logoutToLogin
 );
 
 
 logoutButton.addEventListener(
   "click",
-  () => {
-
-    logoutToLogin();
-
-  }
+  logoutToLogin
 );
 
 
@@ -2281,6 +2398,7 @@ function logoutToLogin() {
 
   temporaryBackup =
     null;
+
 
   temporaryItemPackages.clear();
 
@@ -2304,9 +2422,11 @@ function logoutToLogin() {
 
   loginForm.reset();
 
+
   showScreen(
     loginScreen
   );
+
 
   loginMessage.textContent =
     "";
@@ -2315,8 +2435,8 @@ function logoutToLogin() {
 
 
 /* =========================================================
-   BACKUP GERAL
-   ========================================================= */
+   ABRIR BACKUP
+========================================================= */
 
 backupButton.addEventListener(
   "click",
@@ -2327,6 +2447,7 @@ backupButton.addEventListener(
 
     backupPasswordConfirm.value =
       "";
+
 
     clearMessage(
       backupMessage
@@ -2364,7 +2485,7 @@ cancelBackupButton.addEventListener(
 
 /* =========================================================
    CRIAR BACKUP
-   ========================================================= */
+========================================================= */
 
 confirmBackupButton.addEventListener(
   "click",
@@ -2382,7 +2503,9 @@ confirmBackupButton.addEventListener(
       backupPasswordConfirm.value;
 
 
-    if (!password) {
+    if (
+      !password
+    ) {
 
       backupMessage.textContent =
         "Crie uma senha para este backup.";
@@ -2406,8 +2529,8 @@ confirmBackupButton.addEventListener(
 
 
     if (
-      !vaultData ||
-      !sessionKey
+      !sessionKey ||
+      !vaultData
     ) {
 
       backupMessage.textContent =
@@ -2421,27 +2544,35 @@ confirmBackupButton.addEventListener(
     try {
 
       /*
-       * O backup guarda o pacote criptografado
-       * do cofre dentro de uma segunda camada.
-       *
-       * A senha do backup protege esta camada.
+       * Pegamos o pacote EXATO que está
+       * atualmente salvo no localStorage.
        */
-
-      const currentVaultPackage =
-        getVaultPackage();
-
 
       const currentConfig =
         getConfig();
 
 
+      const currentVault =
+        getVaultPackage();
+
+
       if (
-        !currentVaultPackage ||
         !currentConfig
       ) {
 
         throw new Error(
-          "Dados do cofre não encontrados."
+          "Configuração do cofre não encontrada."
+        );
+
+      }
+
+
+      if (
+        !currentVault
+      ) {
+
+        throw new Error(
+          "Pacote do cofre não encontrado."
         );
 
       }
@@ -2462,7 +2593,7 @@ confirmBackupButton.addEventListener(
           currentConfig,
 
         vault:
-          currentVaultPackage
+          currentVault
 
       };
 
@@ -2565,7 +2696,7 @@ confirmBackupButton.addEventListener(
 
 /* =========================================================
    SALVAR BACKUP
-   ========================================================= */
+========================================================= */
 
 saveBackupButton.addEventListener(
   "click",
@@ -2735,8 +2866,8 @@ saveBackupButton.addEventListener(
 
 
 /* =========================================================
-   RESTAURAR BACKUP
-   ========================================================= */
+   ABRIR RESTAURAÇÃO
+========================================================= */
 
 decryptButton.addEventListener(
   "click",
@@ -2747,6 +2878,7 @@ decryptButton.addEventListener(
 
     decryptPassword.value =
       "";
+
 
     clearMessage(
       decryptMessage
@@ -2774,8 +2906,8 @@ cancelDecryptButton.addEventListener(
 
 
 /* =========================================================
-   DESCRIPTOGRAFAR BACKUP
-   ========================================================= */
+   RESTAURAR BACKUP
+========================================================= */
 
 confirmDecryptButton.addEventListener(
   "click",
@@ -2793,7 +2925,9 @@ confirmDecryptButton.addEventListener(
       decryptPassword.value;
 
 
-    if (!file) {
+    if (
+      !file
+    ) {
 
       decryptMessage.textContent =
         "Selecione um arquivo .enc.";
@@ -2803,7 +2937,9 @@ confirmDecryptButton.addEventListener(
     }
 
 
-    if (!password) {
+    if (
+      !password
+    ) {
 
       decryptMessage.textContent =
         "Digite a senha do backup.";
@@ -2815,10 +2951,9 @@ confirmDecryptButton.addEventListener(
 
     try {
 
-      /*
-       * ETAPA 1
-       * Ler arquivo como texto.
-       */
+      /* -----------------------------------------------------
+         1. Ler arquivo
+      ----------------------------------------------------- */
 
       const text =
         await file.text();
@@ -2830,16 +2965,15 @@ confirmDecryptButton.addEventListener(
       ) {
 
         throw new Error(
-          "Arquivo vazio."
+          "O arquivo está vazio."
         );
 
       }
 
 
-      /*
-       * ETAPA 2
-       * Converter JSON.
-       */
+      /* -----------------------------------------------------
+         2. JSON
+      ----------------------------------------------------- */
 
       let packageData;
 
@@ -2854,16 +2988,15 @@ confirmDecryptButton.addEventListener(
       } catch {
 
         throw new Error(
-          "O arquivo não contém JSON válido."
+          "O arquivo não contém um JSON válido."
         );
 
       }
 
 
-      /*
-       * ETAPA 3
-       * Verificar formato.
-       */
+      /* -----------------------------------------------------
+         3. Estrutura externa
+      ----------------------------------------------------- */
 
       if (
         !packageData ||
@@ -2872,7 +3005,7 @@ confirmDecryptButton.addEventListener(
       ) {
 
         throw new Error(
-          "Estrutura do backup inválida."
+          "Estrutura do arquivo inválida."
         );
 
       }
@@ -2880,79 +3013,153 @@ confirmDecryptButton.addEventListener(
 
       if (
         packageData.format !==
-        "Origon58 Encrypted Backup"
+          "Origon58 Encrypted Backup"
       ) {
 
         throw new Error(
-          "Este não é um backup Origon58."
-        );
-
-      }
-
-
-      if (
-        packageData.version !==
-        BACKUP_VERSION
-      ) {
-
-        throw new Error(
-          "Versão do backup incompatível."
+          "Este arquivo não é um backup do Origon58."
         );
 
       }
 
 
       /*
-       * ETAPA 4
-       * Verificar KDF.
+       * Aceitamos versões 2 e 3.
        */
 
       if (
-        !packageData.kdf ||
+        packageData.version !== 2 &&
+        packageData.version !== 3
+      ) {
+
+        throw new Error(
+          "Versão do backup incompatível: " +
+          packageData.version
+        );
+
+      }
+
+
+      /* -----------------------------------------------------
+         4. KDF
+      ----------------------------------------------------- */
+
+      if (
+        !packageData.kdf
+      ) {
+
+        throw new Error(
+          "O backup não possui configuração PBKDF2."
+        );
+
+      }
+
+
+      if (
         packageData.kdf.name !==
-          "PBKDF2" ||
+          "PBKDF2"
+      ) {
+
+        throw new Error(
+          "KDF do backup incompatível."
+        );
+
+      }
+
+
+      if (
         packageData.kdf.hash !==
-          "SHA-256" ||
+          "SHA-256"
+      ) {
+
+        throw new Error(
+          "Hash do backup incompatível."
+        );
+
+      }
+
+
+      if (
         !Number.isInteger(
           packageData.kdf.iterations
         ) ||
+        packageData.kdf.iterations <=
+          0
+      ) {
+
+        throw new Error(
+          "Número de iterações inválido."
+        );
+
+      }
+
+
+      if (
         typeof packageData.kdf.salt !==
           "string"
       ) {
 
         throw new Error(
-          "Configuração PBKDF2 inválida."
+          "Salt do backup ausente."
         );
 
       }
 
 
-      /*
-       * ETAPA 5
-       * Verificar AES-GCM.
-       */
+      /* -----------------------------------------------------
+         5. AES-GCM
+      ----------------------------------------------------- */
 
       if (
-        !packageData.cipher ||
+        !packageData.cipher
+      ) {
+
+        throw new Error(
+          "Dados AES-GCM ausentes."
+        );
+
+      }
+
+
+      if (
         packageData.cipher.name !==
-          "AES-GCM" ||
+          "AES-GCM"
+      ) {
+
+        throw new Error(
+          "Cifra do backup incompatível."
+        );
+
+      }
+
+
+      if (
         typeof packageData.cipher.iv !==
-          "string" ||
+          "string"
+      ) {
+
+        throw new Error(
+          "IV do backup ausente."
+        );
+
+      }
+
+
+      if (
         typeof packageData.ciphertext !==
           "string"
       ) {
 
         throw new Error(
-          "Estrutura AES-GCM inválida."
+          "Ciphertext do backup ausente."
         );
 
       }
 
 
-      /*
-       * ETAPA 6
-       * Converter salt.
-       */
+      /* -----------------------------------------------------
+         6. Salt
+      ----------------------------------------------------- */
 
       const salt =
         base64ToBytes(
@@ -2961,22 +3168,20 @@ confirmDecryptButton.addEventListener(
 
 
       if (
-        salt.length !== 16
+        salt.length !==
+          16
       ) {
 
         throw new Error(
-          "Salt inválido."
+          "Salt do backup possui tamanho inválido."
         );
 
       }
 
 
-      /*
-       * ETAPA 7
-       * Derivar a chave usando
-       * exatamente os parâmetros
-       * gravados no arquivo.
-       */
+      /* -----------------------------------------------------
+         7. Chave
+      ----------------------------------------------------- */
 
       const key =
         await deriveAESKey(
@@ -2986,10 +3191,9 @@ confirmDecryptButton.addEventListener(
         );
 
 
-      /*
-       * ETAPA 8
-       * Descriptografar.
-       */
+      /* -----------------------------------------------------
+         8. Descriptografar
+      ----------------------------------------------------- */
 
       const payload =
         await decryptJSON(
@@ -3002,60 +3206,69 @@ confirmDecryptButton.addEventListener(
               packageData.ciphertext
 
           },
+
           key
         );
 
 
-      /*
-       * ETAPA 9
-       * Validar conteúdo.
-       */
+      /* -----------------------------------------------------
+         9. Validar payload
+      ----------------------------------------------------- */
 
       if (
         !payload ||
+        typeof payload !==
+          "object"
+      ) {
+
+        throw new Error(
+          "Payload do backup inválido."
+        );
+
+      }
+
+
+      if (
         payload.format !==
           "origon58-backup"
       ) {
 
         throw new Error(
-          "Conteúdo do backup inválido."
+          "Formato interno do backup inválido."
         );
 
       }
 
 
       if (
-        payload.version !==
-        BACKUP_VERSION
+        !payload.config
       ) {
 
         throw new Error(
-          "Versão interna incompatível."
+          "Configuração não encontrada no backup."
         );
 
       }
 
 
       if (
-        !payload.config ||
         !payload.vault
       ) {
 
         throw new Error(
-          "Backup incompleto."
+          "Cofre não encontrado no backup."
         );
 
       }
 
 
+      /* -----------------------------------------------------
+         10. Validar configuração
+      ----------------------------------------------------- */
+
       if (
         payload.config.format !==
-          "Origon58 Config" ||
-        !Array.isArray(
-          payload.config.passwordVerifiers
-        ) ||
-        payload.config.passwordVerifiers.length !==
-          3
+          "Origon58 Config"
       ) {
 
         throw new Error(
@@ -3066,22 +3279,85 @@ confirmDecryptButton.addEventListener(
 
 
       if (
-        payload.vault.format !==
-          "Origon58 Encrypted Vault"
+        !Array.isArray(
+          payload.config.passwordVerifiers
+        )
       ) {
 
         throw new Error(
-          "Cofre do backup inválido."
+          "As três senhas do backup não foram encontradas."
         );
 
       }
 
 
-      /*
-       * ETAPA 10
-       * Salvar somente depois
-       * de tudo ser validado.
-       */
+      if (
+        payload.config.passwordVerifiers.length !==
+          3
+      ) {
+
+        throw new Error(
+          "O backup não possui três verificadores de senha."
+        );
+
+      }
+
+
+      /* -----------------------------------------------------
+         11. Validar cofre
+      ----------------------------------------------------- */
+
+      if (
+        payload.vault.format !==
+          "Origon58 Encrypted Vault"
+      ) {
+
+        throw new Error(
+          "Pacote do cofre inválido."
+        );
+
+      }
+
+
+      if (
+        !payload.vault.cipher
+      ) {
+
+        throw new Error(
+          "Cofre do backup sem conteúdo criptografado."
+        );
+
+      }
+
+
+      if (
+        typeof payload.vault.cipher.iv !==
+          "string"
+      ) {
+
+        throw new Error(
+          "IV do cofre ausente."
+        );
+
+      }
+
+
+      if (
+        typeof payload.vault.cipher.ciphertext !==
+          "string"
+      ) {
+
+        throw new Error(
+          "Ciphertext do cofre ausente."
+        );
+
+      }
+
+
+      /* -----------------------------------------------------
+         12. Tudo válido
+         Só agora alterar o armazenamento.
+      ----------------------------------------------------- */
 
       saveConfig(
         payload.config
@@ -3096,9 +3372,9 @@ confirmDecryptButton.addEventListener(
       );
 
 
-      /*
-       * Limpar sessão atual.
-       */
+      /* -----------------------------------------------------
+         13. Limpar sessão atual
+      ----------------------------------------------------- */
 
       sessionKey =
         null;
@@ -3131,19 +3407,24 @@ confirmDecryptButton.addEventListener(
     ) {
 
       console.error(
-        "ERRO AO RESTAURAR BACKUP:",
+        "ERRO COMPLETO AO RESTAURAR:",
         error
       );
 
 
       /*
-       * Não apagar nem modificar
-       * o cofre existente quando
-       * a restauração falhar.
+       * Agora NÃO escondemos o motivo.
        */
 
       decryptMessage.textContent =
-        "Não foi possível descriptografar este backup.";
+        error &&
+        error.message
+          ? "ERRO: " +
+            error.message
+          : "ERRO: " +
+            String(
+              error
+            );
 
     }
 
@@ -3153,7 +3434,7 @@ confirmDecryptButton.addEventListener(
 
 /* =========================================================
    SERVICE WORKER
-   ========================================================= */
+========================================================= */
 
 if (
   "serviceWorker" in
@@ -3168,11 +3449,22 @@ if (
         .register(
           "./sw.js"
         )
+        .then(
+          (
+            registration
+          ) => {
+
+            registration.update();
+
+          }
+        )
         .catch(
-          (error) => {
+          (
+            error
+          ) => {
 
             console.error(
-              "Erro ao registrar Service Worker:",
+              "Erro no Service Worker:",
               error
             );
 
@@ -3187,7 +3479,7 @@ if (
 
 /* =========================================================
    INICIALIZAÇÃO
-   ========================================================= */
+========================================================= */
 
 function initialize() {
 
@@ -3195,7 +3487,9 @@ function initialize() {
     getConfig();
 
 
-  if (!config) {
+  if (
+    !config
+  ) {
 
     showScreen(
       setupScreen
